@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - rss_radar_data:/var/lib/postgresql/data
+
+volumes:
+  rss_radar_data:
