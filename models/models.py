@@ -51,6 +51,7 @@ class Item(Base):
     description = Column(String, nullable=False)
     link = Column(String, nullable=False)
     pub_date = Column(DateTime, nullable=False)
+    hashcode = Column(String, nullable=False)
     rss_id = Column(UUID(as_uuid=True), ForeignKey('rss.id'), nullable=False)
 
     rss = relationship("Rss", back_populates="items")
@@ -63,6 +64,7 @@ class Item(Base):
         self.description = description
         self.link = link
         self.pub_date = pub_date
+        self.hashcode = hash(f'{title}{description}{link}{pub_date}')
         self.rss_id = rss_id
 
     def __str__(self):
