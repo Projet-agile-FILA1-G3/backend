@@ -2,8 +2,9 @@ import os
 import uuid
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, String, create_engine, UUID
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, String, create_engine, UUID, DateTime, ForeignKey, Integer
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import declarative_base, relationship
 
 load_dotenv('.env')
 
@@ -24,6 +25,8 @@ class Rss(Base):
     title = Column(String, nullable=False)
     last_fetching_date = Column(String, nullable=False)
 
+    items = relationship("Item", back_populates="rss", cascade="all, delete-orphan")
+
     def __init__(self, url, description, title, last_fetching_date, **kw: any):
         super().__init__(**kw)
         self.url = url
@@ -32,19 +35,29 @@ class Rss(Base):
         self.last_fetching_date = last_fetching_date
 
     def __str__(self):
-        return f'{self.url} - {self.description} - {self.title} - {self.last_fetching_date}'
+        return (f'Rss(\n'
+                f'  id={self.id},\n'
+                f'  url="{self.url}",\n'
+                f'  description="{self.description}",\n'
+                f'  title="{self.title}",\n'
+                f'  last_fetching_date="{self.last_fetching_date}"\n'
+                f')')
 
 
-class RssItem(Base):
-    __tablename__ = 'rss_item'
+class Item(Base):
+    __tablename__ = 'item'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
     link = Column(String, nullable=False)
-    pub_date = Column(String, nullable=False)
-    rss_id = Column(UUID(as_uuid=True), nullable=False)
+    pub_date = Column(DateTime, nullable=False)
+    rss_id = Column(UUID(as_uuid=True), ForeignKey('rss.id'), nullable=False)
 
-    def __init__(self, title, description, link, pub_date, rss_id, **kw: any):
+    rss = relationship("Rss", back_populates="items")
+
+    tokens = relationship("Token", back_populates="item", cascade="all, delete-orphan")
+
+    def __init__(self, title, description, link, pub_date, rss_id, **kw):
         super().__init__(**kw)
         self.title = title
         self.description = description
@@ -53,10 +66,42 @@ class RssItem(Base):
         self.rss_id = rss_id
 
     def __str__(self):
-        return f'{self.title} - {self.description} - {self.link} - {self.pub_date} - {self.rss_id}'
+        return (f'Item(\n'
+                f'  id={self.id},\n'
+                f'  title="{self.title}",\n'
+                f'  description="{self.description}",\n'
+                f'  link="{self.link}",\n'
+                f'  pub_date="{self.pub_date}",\n'
+                f'  rss_id={self.rss_id}\n'
+                f')')
+
+
+class Token(Base):
+    __tablename__ = 'token'
+    word = Column(String, primary_key=True)
+    rank = Column(Integer, nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey('item.id'), primary_key=True)
+
+    item = relationship("Item", back_populates="tokens")
+
+    def __init__(self, word, rank, item_id, **kw):
+        super().__init__(**kw)
+        self.word = word
+        self.rank = rank
+        self.item_id = item_id
+
+    def __str__(self):
+        return (f'Token(\n'
+                f'  word="{self.word}",\n'
+                f'  rank={self.rank},\n'
+                f'  item_id={self.item_id}\n'
+                f')')
 
 
 if __name__ == '__main__':
-    engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}', echo=False)
-
-    Base.metadata.create_all(engine)
+    try:
+        engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}', echo=False)
+        Base.metadata.create_all(engine)
+        print("Tables created!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
