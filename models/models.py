@@ -3,7 +3,6 @@ import uuid
 
 from dotenv import load_dotenv
 from sqlalchemy import Column, String, create_engine, UUID, DateTime, ForeignKey, Integer
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base, relationship
 
 load_dotenv('.env')
