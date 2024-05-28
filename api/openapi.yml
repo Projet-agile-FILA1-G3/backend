@@ -9,7 +9,7 @@ paths:
     get:
       description: perform a search among rss feed indexed in the application
       parameters:
-        - in: path
+        - in: query
           name: query
           schema:
             type: string
@@ -33,3 +33,5 @@ components:
     QueryResult:
       type: object
       properties:
+        title:
+          type: string
