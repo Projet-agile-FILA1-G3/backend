@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from sqlalchemy import func, desc
 
-from models.models import Token, Item
+from shared.models import Token, Item
 from shared import string_utils
 from shared.db import get_session
 
@@ -41,7 +41,7 @@ def find_most_relevant_items(words, limit=10):
 def search():
     words_string = request.args.get('words', '')
     words_string = string_utils.ProcessingString().process_text(words_string)
-    print(words_string)
+    # print(words_string)
     words = words_string.split(' ')
     limit = int(request.args.get('limit', 10))
 

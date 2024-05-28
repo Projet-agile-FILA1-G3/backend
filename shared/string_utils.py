@@ -21,6 +21,8 @@ class ProcessingString:
             self.language = 'french'
         elif in_language == 'en':
             self.language = 'english'
+        else:
+            self.language = 'french'
         self.stopwords = set(stopwords.words(self.language))
         self.stemmer = SnowballStemmer(self.language)
 

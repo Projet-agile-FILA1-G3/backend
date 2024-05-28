@@ -1,7 +1,4 @@
-from datetime import datetime
-
-from models.models import Rss, Item, Token
-from shared.db import get_session
+from shared.models import Token
 from shared.string_utils import ProcessingString
 from collections import Counter
 
