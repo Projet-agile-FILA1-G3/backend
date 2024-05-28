@@ -1,13 +1,9 @@
 import re
 import ssl
-from datetime import datetime
 
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
-
-from db import get_session
-from models.models import Token, Item, Rss
 
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -33,6 +29,10 @@ class ProcessingString:
 
     def process_text(self, text):
         text = text.lower()
+        text = re.sub(r'\b\d+\b', '', text)
         text = re.sub(r'[_\W]', ' ', text)
         text = self.remove_stopwords(text)
-        return ' '.join([self.stem_word(word) for word in text.split()])
+        tokens = [self.stem_word(word) for word in text.split()]
+        tokens = [token for token in tokens if len(token) > 1]
+
+        return ' '.join(tokens)
