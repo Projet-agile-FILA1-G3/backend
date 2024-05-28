@@ -7,12 +7,18 @@ from rss_parser.models.rss import RSS
 from rss_parser.models.atom.feed import Tag, Entry
 import rss_parser.models.rss.channel as RSS_tag
 from re import sub
+
+from shared.db import get_session
+from models.models import Rss, Item
+from token_management import ProcessingToken
+
 import datetime
 
 # Si csv est choisi comme source, alors un fichier urls.csv doit se situer au même endroit que
 # la classe Crawler.
 #
 #
+
 
 class Crawler:
     alphabet = [chr(i) for i in range(97, 123)] + ['é', 'è', 'à', 'ç', ' ', 'ï', 'ë', "'", 'ê', 'ô', 'œ', "'"] + [chr(i) for i in range(48, 59)]
@@ -56,11 +62,26 @@ class Crawler:
             # à développer
             pass
 
-    def save_data(self, items):
+    def save_data(self, rss, items):
         print(items[0]['source_url'], "\n\n\n\n")
+        session = get_session()
+        Object_rss = Rss(url=rss['url'], description=rss['description'] or "Pas de description", title=rss['title'] or "Pas de titre",
+                  last_fetching_date= rss['updated'] or datetime.datetime.now().isoformat())
+        session.add(Object_rss)
+        session.commit()
+        rss_id=Object_rss.id
         for item in items:
-            #print(item['description'])
-            pass
+            item = Item(title=item['title'], description=item['description'], link=item['url'],
+                        pub_date=datetime.datetime.now(), rss_id=rss_id)
+            session.add(item)
+            session.commit()
+
+            processing_token = ProcessingToken(rss['language'])
+            tokens = processing_token.process_tokens(item.title, item.description, item.id)
+            for token in tokens:
+                print(token)
+                session.add(token)
+            session.commit()
 
     def crawl(self):
         for urls in self.urls:
@@ -102,7 +123,7 @@ class Crawler:
                     atom_title = atom_info.title.content
                     atom_updated =atom_info.updated.content
                     atom_url = response.url
-                    atom_dict = dict({
+                    rss_dict = dict({
                         'language':atom_language,
                         'title': atom_title,
                         'updated': atom_updated,
@@ -140,9 +161,11 @@ class Crawler:
                         # indexation à faire ici
 
                 # Enregistrement des données de la liste 'items' dans la DB ici
-                self.save_data(items)
+                self.save_data(rss_dict, items)
             except Exception as error:
                 print("Fatal Error :", error)
                 pass
 
-test = Crawler('csv').crawl()
+
+if __name__ == '__main__':
+    test = Crawler('csv').crawl()

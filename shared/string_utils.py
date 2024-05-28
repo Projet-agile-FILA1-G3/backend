@@ -16,10 +16,13 @@ nltk.download('stopwords')
 
 
 class ProcessingString:
-    def __init__(self, language='french'):
-        self.language = language
-        self.stopwords = set(stopwords.words(language))
-        self.stemmer = SnowballStemmer(language)
+    def __init__(self, in_language='french'):
+        if in_language == 'fr':
+            self.language = 'french'
+        elif in_language == 'en':
+            self.language = 'english'
+        self.stopwords = set(stopwords.words(self.language))
+        self.stemmer = SnowballStemmer(self.language)
 
     def remove_stopwords(self, sentence):
         return ' '.join([word for word in sentence.split() if word not in self.stopwords])
