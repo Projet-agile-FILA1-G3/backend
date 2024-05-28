@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: Rss-Radar
+  contact:
+    email: elias.morio@imt-atlantique.net
+  version: 1.0.11
+tags:
+  - name: pet
+    description: Everything about your Pets
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+  - name: store
+    description: Access to Petstore orders
+    externalDocs:
+      description: Find out more about our store
+      url: http://swagger.io
+  - name: user
+    description: Operations about user
+paths:
+  /search:
+    get:
+      description: perform a search among rss feed indexed in the application
+      parameters:
+        - in: path
+          name: query
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Query correctly performed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QueryResult'
+        '400':
+          description: Bad request, e.g missing param
+
+        '500':
+          description: Internal server error
+components:
+  schemas:
+    QueryResult:
+      type: object
+      properties:
