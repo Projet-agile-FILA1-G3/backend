@@ -2,10 +2,10 @@ import os
 import uuid
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, String, create_engine, UUID, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, UUID, DateTime, ForeignKey, PrimaryKeyConstraint, Integer
 from sqlalchemy.orm import declarative_base, relationship
 
-load_dotenv('.env')
+load_dotenv('../.env')
 
 host = os.getenv('POSTGRES_HOST')
 port = os.getenv('POSTGRES_PORT')
@@ -80,29 +80,24 @@ class Item(Base):
 class Token(Base):
     __tablename__ = 'token'
     word = Column(String, primary_key=True)
-    # rank = Column(Integer, nullable=False)
+    rank = Column(Integer, nullable=False)
     item_id = Column(UUID(as_uuid=True), ForeignKey('item.id'), primary_key=True)
 
     item = relationship("Item", back_populates="tokens")
 
+    __table_args__ = (
+        PrimaryKeyConstraint('word', 'item_id', name='token_pk'),
+    )
+
     def __init__(self, word, rank, item_id, **kw):
         super().__init__(**kw)
         self.word = word
-        # self.rank = rank
+        self.rank = rank
         self.item_id = item_id
 
     def __str__(self):
         return (f'Token(\n'
                 f'  word="{self.word}",\n'
-                # f'  rank={self.rank},\n'
+                f'  rank={self.rank},\n'
                 f'  item_id={self.item_id}\n'
                 f')')
-
-
-if __name__ == '__main__':
-    try:
-        engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}', echo=False)
-        Base.metadata.create_all(engine)
-        print("Tables created!")
-    except Exception as e:
-        print(f"An error occurred: {e}")
