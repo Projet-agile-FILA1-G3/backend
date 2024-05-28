@@ -7,10 +7,11 @@ from rss_parser.models.rss import RSS
 from rss_parser.models.atom.feed import Tag, Entry
 import rss_parser.models.rss.channel as RSS_tag
 from re import sub
+import datetime
 
 # Si csv est choisi comme source, alors un fichier urls.csv doit se situer au même endroit que
 # la classe Crawler.
-# 
+#
 #
 
 class Crawler:
@@ -56,7 +57,7 @@ class Crawler:
             pass
 
     def save_data(self, items):
-        print("\n\n\n\n", items[0]['source_url'])
+        print(items[0]['source_url'], "\n\n\n\n")
         for item in items:
             #print(item['description'])
             pass
@@ -67,39 +68,74 @@ class Crawler:
             response = get(urls,  headers={"User-Agent": "curl/7.64.1"})
             try:
                 item_list = RSSParser.parse(response.text, schema=RSS).channel.items
+                rss_info = RSSParser.parse(response.text, schema=RSS).channel
+                print(rss_info)
+                rss_title = rss_info.title.content
+                rss_language = rss_info.language.content
+                rss_lastdate = None
+                rss_description = None
+                rss_url = response.url
+                try:
+                    rss_description = rss_info.description.content
+                except:
+                    rss_description = None
+                try:
+                    rss_lastdate = rss_info.pub_date.content.isoformat()
+                except:
+                    try:
+                        rss_lastdate = rss_info.last_build_date.isoformat()
+                    except:
+                        rss_lastdate = None
+                rss_dict = dict({
+                    'language': rss_language,
+                    'title': rss_title,
+                    'updated': rss_lastdate,
+                    'url': rss_url,
+                    'description': rss_description
+                })
             except Exception as primeError:
-                # print(primeError)
+                #print("Attention erreur ici :", primeError)
                 try:
                     item_list = BaseParser.parse(response.text, schema=Atom).feed.content.entries
-                    #print("type of item_list :", type(item_list.content.entries),"\nItem_list non formatté :", item_list.content.entries, "\ninfo :", item_list.__dict__)
+                    atom_info = BaseParser.parse(response.text, schema=Atom).feed.content
+                    atom_language = 'en'
+                    atom_title = atom_info.title.content
+                    atom_updated =atom_info.updated.content
+                    atom_url = response.url
+                    atom_dict = dict({
+                        'language':atom_language,
+                        'title': atom_title,
+                        'updated': atom_updated,
+                        'url': atom_url,
+                        'description': None
+                    })
                 except Exception as error:
                     print(response.url)
                     print("Fatal Error :", error)
                     return 0
-
             try:
                 if type(item_list[0]) == Tag[Entry] :
                     for item in item_list:
                         if item.content.content != None:
-                            print(item.content.link)
+                            print(item.content.links[0].attributes['href'])
                             items.append(dict({
                                 'title': Crawler.extract_values(Crawler.split_content(item.content.title)),
                                 'description': Crawler.extract_values(Crawler.split_content(item.content.content)),
                                 'uuid': uuid4,
-                                'source_url': response.url
-                                #'image': item.content.image
+                                'source_url': response.url,
+                                'url': item.content.links[0].attributes['href']
                             }))
                 if type(item_list[0]) == RSS_tag.Tag[RSS_tag.Item]:
                     for item in item_list:
                         if item.description != None:
                             #print(Crawler.split_content(str(item.enclosure)))
-                            print(item.link)
+                            print(item.link.content)
                             items.append(dict({
                                 'title': Crawler.extract_values(Crawler.split_content(item.title)),
                                 'description': Crawler.extract_values(Crawler.split_content(item.description)),
                                 'uuid': uuid4,
-                                'source_url': response.url
-                                #'image': item.image
+                                'source_url': response.url,
+                                'url': item.link.content
                             }))
                         # indexation à faire ici
 
