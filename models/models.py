@@ -80,7 +80,7 @@ class Item(Base):
 class Token(Base):
     __tablename__ = 'token'
     word = Column(String, primary_key=True)
-    rank = Column(Integer, nullable=False)
+    # rank = Column(Integer, nullable=False)
     item_id = Column(UUID(as_uuid=True), ForeignKey('item.id'), primary_key=True)
 
     item = relationship("Item", back_populates="tokens")
@@ -88,13 +88,13 @@ class Token(Base):
     def __init__(self, word, rank, item_id, **kw):
         super().__init__(**kw)
         self.word = word
-        self.rank = rank
+        # self.rank = rank
         self.item_id = item_id
 
     def __str__(self):
         return (f'Token(\n'
                 f'  word="{self.word}",\n'
-                f'  rank={self.rank},\n'
+                # f'  rank={self.rank},\n'
                 f'  item_id={self.item_id}\n'
                 f')')
 
