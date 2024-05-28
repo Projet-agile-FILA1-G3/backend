@@ -1,3 +1,4 @@
+import hashlib
 import os
 import uuid
 
@@ -63,7 +64,7 @@ class Item(Base):
         self.description = description
         self.link = link
         self.pub_date = pub_date
-        self.hashcode = hash(f'{title}{description}{link}{pub_date}')
+        self.hashcode = hashlib.md5((title + description + link).encode('utf-8')).hexdigest()
         self.rss_id = rss_id
 
     def __str__(self):
