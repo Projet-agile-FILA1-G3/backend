@@ -2,7 +2,7 @@ import os
 import uuid
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, String, create_engine, UUID, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, UUID, DateTime, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.orm import declarative_base, relationship
 
 load_dotenv('.env')
@@ -85,7 +85,11 @@ class Token(Base):
 
     item = relationship("Item", back_populates="tokens")
 
-    def __init__(self, word, rank, item_id, **kw):
+    __table_args__ = (
+        PrimaryKeyConstraint('word', 'item_id', name='token_pk'),
+    )
+
+    def __init__(self, word, item_id, **kw):
         super().__init__(**kw)
         self.word = word
         # self.rank = rank
@@ -97,12 +101,3 @@ class Token(Base):
                 # f'  rank={self.rank},\n'
                 f'  item_id={self.item_id}\n'
                 f')')
-
-
-if __name__ == '__main__':
-    try:
-        engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}', echo=False)
-        Base.metadata.create_all(engine)
-        print("Tables created!")
-    except Exception as e:
-        print(f"An error occurred: {e}")
