@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 
 from shared.models import Base
 
-load_dotenv('.env')
+if os.getenv('NODE_MODE') != 'production':
+    load_dotenv('.env')
 
 host = os.getenv('POSTGRES_HOST')
 port = os.getenv('POSTGRES_PORT')
