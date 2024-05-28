@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from sqlalchemy import Column, String, UUID, DateTime, ForeignKey, PrimaryKeyConstraint, Integer
 from sqlalchemy.orm import declarative_base, relationship
 
-load_dotenv('../.env')
+load_dotenv('.env')
 
 host = os.getenv('POSTGRES_HOST')
 port = os.getenv('POSTGRES_PORT')
