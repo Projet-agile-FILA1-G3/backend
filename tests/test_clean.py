@@ -11,15 +11,14 @@ class CleaningTest(unittest.TestCase):
 
         result = ps.remove_stopwords(sentence)
 
-        self.assertNotIn("is", result);
-        self.assertNotIn("a", result);
-        self.assertNotIn("with", result);
+        self.assertNotIn("is", result)
+        self.assertNotIn("a", result)
+        self.assertNotIn("with", result)
 
-        self.assertIn("sentence", result);
-        self.assertIn("long", result);
-        self.assertIn("lot", result);
-        self.assertIn("stopwords", result);
-
+        self.assertIn("sentence", result)
+        self.assertIn("long", result)
+        self.assertIn("lot", result)
+        self.assertIn("stopwords", result)
 
     def test_remove_french_stopwords(self):
         ps = ProcessingString('fr')
@@ -29,11 +28,11 @@ class CleaningTest(unittest.TestCase):
 
         print(result)
 
-        self.assertNotIn(" une ", result);
-        self.assertNotIn(" avec ", result);
-        self.assertNotIn(" de ", result);
+        self.assertNotIn(" une ", result)
+        self.assertNotIn(" avec ", result)
+        self.assertNotIn(" de ", result)
 
-        self.assertIn("longue", result);
-        self.assertIn("phrase", result);
-        self.assertIn("beaucoup", result);
-        self.assertIn("mots", result);
+        self.assertIn("longue", result)
+        self.assertIn("phrase", result)
+        self.assertIn("beaucoup", result)
+        self.assertIn("mots", result)
