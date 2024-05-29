@@ -36,3 +36,19 @@ class CleaningTest(unittest.TestCase):
         self.assertIn("phrase", result)
         self.assertIn("beaucoup", result)
         self.assertIn("mots", result)
+
+    def test_stem_word1(self):
+        ps = ProcessingString('en')
+        word = "running"
+
+        result = ps.stem_word(word)
+
+        self.assertEqual(result, "run")
+
+    def test_stem_word1(self):
+        ps = ProcessingString('fr')
+        word = "courir"
+
+        result = ps.stem_word(word)
+
+        self.assertEqual(result, "cour")
