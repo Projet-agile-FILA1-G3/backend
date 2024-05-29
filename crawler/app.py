@@ -1,5 +1,3 @@
-import hashlib
-
 from requests import get
 from rss_parser import RSSParser, BaseParser
 from pandas import read_csv
@@ -16,9 +14,7 @@ from shared.db import get_session
 from shared.models import Rss, Item
 from token_management import ProcessingToken
 
-import datetime
-
-
+from datetime import datetime, timedelta
 # Si csv est choisi comme source, alors un fichier urls.csv doit se situer au même endroit que
 # la classe Crawler.
 #
@@ -26,51 +22,48 @@ import datetime
 
 
 class Crawler:
-    alphabet = [chr(i) for i in range(97, 123)] + ['é', 'è', 'à', 'ç', ' ', 'ï', 'ë', "'", 'ê', 'ô', 'œ', "'"] + [chr(i)
-                                                                                                                  for i
-                                                                                                                  in
-                                                                                                                  range(
-                                                                                                                      48,
-                                                                                                                      59)]
 
     @staticmethod
-    def extract_values(text):
-
-        text = text.lower()
-        pattern_balise = r'<.*?>'
-        pattern_back = r'[\a\b\f\n\r\t\v]'
-        text = sub(pattern_balise, ' ', text)
-        text = sub(pattern_back, '', text)
-        text = text.replace('\xa0', ' ')
-        text = text.replace('-', ' ')
-        ret = ""
-        for car in text:
-            if car in Crawler.alphabet:
-                ret += car
+    def parse_date(date, protocol):
+        if protocol.lower() == 'rss':
+            if date.pub_date:
+                date = date.pub_date.content
             else:
-                ret += ' '
-        return ret
+                return (datetime.now() - timedelta(days=2)).isoformat()
+            try:
+                return datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %z").isoformat()
+            except:
+                return datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %Z").isoformat()
+
+        elif protocol.lower() == 'atom':
+            if date.content.updated:
+                return date.content.updated.content.isoformat()
+            else:
+                return (datetime.now() - timedelta(days=2)).isoformat()
 
     @staticmethod
     def split_content(text):
         return text.split("content='")[0].split("' attributes")[0]
 
-    def __init__(self, RSS_URLS_TYPE='csv', STORAGE_TYPE='postgres'):
+    @staticmethod
+    def recursive_crawling(urls, start_url, target_url):
+        return None
+
+    def __init__(self, RSS_URLS_TYPE = 'csv', STORAGE_TYPE = 'postgres'):
         self.source_type = RSS_URLS_TYPE.lower()
         self.storage_type = STORAGE_TYPE.lower()
         self.urls = self.get_URLs()
 
     def get_URLs(self):
-        if self.source_type == 'csv':
+        if self.source_type == 'csv' or self.source_type != 'db':
             file = read_csv('./urls.csv')
             # print(file.iloc[:, 0].tolist())
             return file.iloc[:, 0].tolist()
-        if self.source_type == 'postgres':
-            # à développer
-            pass
-        if self.source_type == 'mangodb':
-            # à développer
-            pass
+        else:
+            session = get_session()
+            res = [url[0] for url in session.query(Rss.url).all()]
+            session.close()
+            return res
 
     def save_data(self, rss, items):
         # print(items[0]['source_url'], "\n\n\n\n")
@@ -80,12 +73,12 @@ class Crawler:
         if Object_rss:
             Object_rss.description = rss['description'] or "Pas de description"
             Object_rss.title = rss['title'] or "Pas de titre"
-            Object_rss.last_fetching_date = rss['updated'] or datetime.datetime.now().isoformat()
+            Object_rss.last_fetching_date = rss['updated'] or datetime.now().isoformat()
             rss_id = Object_rss.id
         else:
             Object_rss = Rss(url=rss['url'], description=rss['description'] or "Pas de description",
                              title=rss['title'] or "Pas de titre",
-                             last_fetching_date=rss['updated'] or datetime.datetime.now().isoformat())
+                             last_fetching_date=rss['updated'] or datetime.now().isoformat())
             session.add(Object_rss)
             session.commit()
             rss_id = Object_rss.id
@@ -97,7 +90,7 @@ class Crawler:
 
         for item in items:
             item_obj = Item(title=item['title'], description=item['description'], link=item['url'],
-                            pub_date=datetime.datetime.now(), rss_id=rss_id)
+                            pub_date=datetime.now(), rss_id=rss_id)
             try:
                 session.add(item_obj)
                 session.commit()
@@ -125,7 +118,7 @@ class Crawler:
     def crawl(self):
         for urls in self.urls:
             items = []
-            response = get(urls, headers={"User-Agent": "curl/7.64.1"})
+            response = get(urls,  headers={"User-Agent": "curl/7.64.1"})
             try:
                 item_list = RSSParser.parse(response.text, schema=RSS).channel.items
                 rss_info = RSSParser.parse(response.text, schema=RSS).channel
@@ -170,34 +163,29 @@ class Crawler:
                         'description': None
                     })
                 except Exception as error:
-                    # print(response.url)
-                    # print("Fatal Error :", error)
                     return 0
             try:
                 if type(item_list[0]) == Tag[Entry]:
                     for item in item_list:
                         if item.content.content != None:
-                            # print(item.content.links[0].attributes['href'])
                             items.append(dict({
-                                'title': Crawler.extract_values(Crawler.split_content(item.content.title)),
-                                'description': Crawler.extract_values(Crawler.split_content(item.content.content)),
+                                'title': Crawler.split_content(item.content.title),
+                                'description': Crawler.split_content(item.content.content),
                                 'source_url': response.url,
-                                'url': item.content.links[0].attributes['href']
+                                'url': item.content.links[0].attributes['href'],
+                                'pub_date': Crawler.parse_date(item, 'atom')
                             }))
                 if type(item_list[0]) == RSS_tag.Tag[RSS_tag.Item]:
                     for item in item_list:
                         if item.description != None:
-                            # print(Crawler.split_content(str(item.enclosure)))
-                            # print(item.link.content)
                             items.append(dict({
-                                'title': Crawler.extract_values(Crawler.split_content(item.title)),
-                                'description': Crawler.extract_values(Crawler.split_content(item.description)),
+                                'title': Crawler.split_content(item.title),
+                                'description': Crawler.split_content(item.description),
                                 'source_url': response.url,
-                                'url': item.link.content
+                                'url': item.link.content,
+                                'pub_date': Crawler.parse_date(item, 'rss')
                             }))
-                        # indexation à faire ici
 
-                # Enregistrement des données de la liste 'items' dans la DB ici
                 self.save_data(rss_dict, items)
             except Exception as error:
                 print("Fatal Error :", error)
