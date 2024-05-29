@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sqlalchemy import func, desc
+from sqlalchemy.sql.operators import or_
 
 from shared.models import Token, Item
 from shared import string_utils
@@ -17,11 +18,22 @@ load_dotenv('.env')
 
 def find_most_relevant_items(words, limit=10):
     session = get_session()
+
+    if not words:
+        return []
+
+    like_conditions = [Token.word.like(f"%{word}%") for word in words]
+
+    if len(like_conditions) == 1:
+        conditions = like_conditions[0]
+    else:
+        conditions = or_(*like_conditions)
+
     subquery = session.query(
         Token.item_id,
         func.sum(Token.rank).label('total_rank')
     ).filter(
-        Token.word.in_(words)
+        conditions
     ).group_by(
         Token.item_id
     ).subquery()
