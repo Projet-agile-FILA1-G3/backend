@@ -8,6 +8,8 @@ from rss_parser.models.atom.feed import Tag, Entry
 import rss_parser.models.rss.channel as RSS_tag
 from re import sub
 
+from sqlalchemy.exc import IntegrityError
+
 from shared.db import get_session
 from shared.models import Rss, Item
 from token_management import ProcessingToken
@@ -66,22 +68,52 @@ class Crawler:
     def save_data(self, rss, items):
         # print(items[0]['source_url'], "\n\n\n\n")
         session = get_session()
-        Object_rss = Rss(url=rss['url'], description=rss['description'] or "Pas de description", title=rss['title'] or "Pas de titre",
-                  last_fetching_date= rss['updated'] or datetime.now().isoformat())
-        session.add(Object_rss)
-        session.commit()
-        rss_id=Object_rss.id
+        Object_rss = session.query(Rss).filter_by(url=rss['url']).first()
+
+        if Object_rss:
+            Object_rss.description = rss['description'] or "Pas de description"
+            Object_rss.title = rss['title'] or "Pas de titre"
+            Object_rss.last_fetching_date = rss['updated'] or datetime.datetime.now().isoformat()
+            rss_id = Object_rss.id
+        else:
+            Object_rss = Rss(url=rss['url'], description=rss['description'] or "Pas de description",
+                             title=rss['title'] or "Pas de titre",
+                             last_fetching_date=rss['updated'] or datetime.datetime.now().isoformat())
+            session.add(Object_rss)
+            session.commit()
+            rss_id = Object_rss.id
+
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+
         for item in items:
-            item = Item(title=item['title'], description=item['description'], link=item['url'],
-                        pub_date=item['pub_date'], rss_id=rss_id)
-            session.add(item)
-            session.commit()
+            item_obj = Item(title=item['title'], description=item['description'], link=item['url'],
+                            pub_date=datetime.datetime.now(), rss_id=rss_id)
+            try:
+                session.add(item_obj)
+                session.commit()
+                item_id = item_obj.hashcode
+            except IntegrityError:
+                session.rollback()
+                existing_item = session.query(Item).filter_by(
+                    title=item['title'], description=item['description'], link=item['url'], rss_id=rss_id
+                ).first()
+                if existing_item:
+                    item_id = existing_item.hashcode
+                else:
+                    raise Exception("Failed to retrieve or insert Item record.")
+
             processing_token = ProcessingToken(rss['language'])
-            tokens = processing_token.process_tokens(item.title, item.description, item.id)
+            tokens = processing_token.process_tokens(item["title"], item["description"], item_id)
             for token in tokens:
-                session.add(token)
-            session.commit()
-        session.close()
+                try:
+                    session.add(token)
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+                    continue
 
     def crawl(self):
         for urls in self.urls:
@@ -121,10 +153,10 @@ class Crawler:
                     atom_info = BaseParser.parse(response.text, schema=Atom).feed.content
                     atom_language = 'en'
                     atom_title = atom_info.title.content
-                    atom_updated =atom_info.updated.content
+                    atom_updated = atom_info.updated.content
                     atom_url = response.url
                     rss_dict = dict({
-                        'language':atom_language,
+                        'language': atom_language,
                         'title': atom_title,
                         'updated': atom_updated,
                         'url': atom_url,
@@ -139,7 +171,6 @@ class Crawler:
                             items.append(dict({
                                 'title': Crawler.split_content(item.content.title),
                                 'description': Crawler.split_content(item.content.content),
-                                'uuid': uuid4,
                                 'source_url': response.url,
                                 'url': item.content.links[0].attributes['href'],
                                 'pub_date': Crawler.parse_date(item, 'atom')
@@ -150,7 +181,6 @@ class Crawler:
                             items.append(dict({
                                 'title': Crawler.split_content(item.title),
                                 'description': Crawler.split_content(item.description),
-                                'uuid': uuid4,
                                 'source_url': response.url,
                                 'url': item.link.content,
                                 'pub_date': Crawler.parse_date(item, 'rss')

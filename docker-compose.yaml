@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     volumes:
-      - rss_radar_data:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
 
 volumes:
-  rss_radar_data:
+  postgres:

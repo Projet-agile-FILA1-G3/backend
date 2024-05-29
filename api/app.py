@@ -29,7 +29,7 @@ def find_most_relevant_items(words, limit=10):
     query = session.query(
         Item
     ).join(
-        subquery, Item.id == subquery.c.item_id
+        subquery, Item.hashcode == subquery.c.item_id
     ).order_by(
         desc(subquery.c.total_rank)
     ).limit(limit)
@@ -57,7 +57,7 @@ def search():
         return jsonify({"message": "No relevant items found"}), 204
 
     results = [{
-        'id': str(item.id),
+        'hashcode': str(item.hashcode),
         'title': item.title,
         'description': item.description,
         'link': item.link,
