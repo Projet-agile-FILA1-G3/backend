@@ -57,7 +57,7 @@ def search():
         return jsonify({"message": "No relevant items found"}), 204
 
     results = [{
-        'id': str(item.id),
+        'hashcode': str(item.hashcode),
         'title': item.title,
         'description': item.description,
         'link': item.link,

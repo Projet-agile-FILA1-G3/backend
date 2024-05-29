@@ -1,3 +1,4 @@
+import hashlib
 import os
 import uuid
 
@@ -19,7 +20,7 @@ Base = declarative_base()
 class Rss(Base):
     __tablename__ = 'rss'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    url = Column(String, nullable=False)
+    url = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=False)
     title = Column(String, nullable=False)
     last_fetching_date = Column(String, nullable=False)
@@ -45,12 +46,11 @@ class Rss(Base):
 
 class Item(Base):
     __tablename__ = 'item'
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    hashcode = Column(String, nullable=False, primary_key=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
     link = Column(String, nullable=False)
     pub_date = Column(DateTime, nullable=False)
-    hashcode = Column(String, nullable=False)
     rss_id = Column(UUID(as_uuid=True), ForeignKey('rss.id'), nullable=False)
 
     rss = relationship("Rss", back_populates="items")
@@ -59,11 +59,11 @@ class Item(Base):
 
     def __init__(self, title, description, link, pub_date, rss_id, **kw):
         super().__init__(**kw)
+        self.hashcode = hashlib.md5((title + description + link).encode('utf-8')).hexdigest()
         self.title = title
         self.description = description
         self.link = link
         self.pub_date = pub_date
-        self.hashcode = hash(f'{title}{description}{link}{pub_date}')
         self.rss_id = rss_id
 
     def __str__(self):
@@ -81,7 +81,7 @@ class Token(Base):
     __tablename__ = 'token'
     word = Column(String, primary_key=True)
     rank = Column(Integer, nullable=False)
-    item_id = Column(UUID(as_uuid=True), ForeignKey('item.id'), primary_key=True)
+    item_id = Column(String, ForeignKey('item.hashcode'), primary_key=True)
 
     item = relationship("Item", back_populates="tokens")
 
