@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from sqlalchemy import func, desc
 
 from shared.models import Token, Item
@@ -9,6 +10,7 @@ from shared import string_utils
 from shared.db import get_session
 
 app = Flask(__name__)
+CORS(app)
 
 load_dotenv('.env')
 
