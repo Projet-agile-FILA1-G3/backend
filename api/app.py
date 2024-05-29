@@ -42,18 +42,19 @@ def find_most_relevant_items(words, limit=10):
 @app.route('/search')
 def search():
     query_string = request.args.get('query', '')
+
+    if not query_string:
+        return jsonify({"error": "No query provided"}), 400
+
     query_string = string_utils.ProcessingString().process_text(query_string)
     # print(query_string)
     words = query_string.split(' ')
     limit = int(request.args.get('limit', 10))
 
-    if not words:
-        return jsonify({"error": "No query provided"}), 400
-
     most_relevant_items = find_most_relevant_items(words, limit)
 
     if not most_relevant_items:
-        return jsonify({"message": "No relevant items found"}), 404
+        return jsonify({"message": "No relevant items found"}), 204
 
     results = [{
         'id': str(item.id),
