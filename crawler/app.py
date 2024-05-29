@@ -73,12 +73,12 @@ class Crawler:
         if Object_rss:
             Object_rss.description = rss['description'] or "Pas de description"
             Object_rss.title = rss['title'] or "Pas de titre"
-            Object_rss.last_fetching_date = rss['updated'] or datetime.datetime.now().isoformat()
+            Object_rss.last_fetching_date = rss['updated'] or datetime.now().isoformat()
             rss_id = Object_rss.id
         else:
             Object_rss = Rss(url=rss['url'], description=rss['description'] or "Pas de description",
                              title=rss['title'] or "Pas de titre",
-                             last_fetching_date=rss['updated'] or datetime.datetime.now().isoformat())
+                             last_fetching_date=rss['updated'] or datetime.now().isoformat())
             session.add(Object_rss)
             session.commit()
             rss_id = Object_rss.id
@@ -90,7 +90,7 @@ class Crawler:
 
         for item in items:
             item_obj = Item(title=item['title'], description=item['description'], link=item['url'],
-                            pub_date=datetime.datetime.now(), rss_id=rss_id)
+                            pub_date=datetime.now(), rss_id=rss_id)
             try:
                 session.add(item_obj)
                 session.commit()
