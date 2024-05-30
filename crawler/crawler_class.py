@@ -161,6 +161,7 @@ class Crawler:
             session.commit()
         except IntegrityError:
             session.rollback()
+            return 0
 
         for item in items:
             item_obj = Item(title=item['title'], description=item['description'], link=item['url'],
@@ -171,23 +172,13 @@ class Crawler:
                 item_id = item_obj.hashcode
             except IntegrityError:
                 session.rollback()
-                existing_item = session.query(Item).filter_by(
-                    title=item['title'], description=item['description'], link=item['url'], rss_id=rss_id
-                ).first()
-                if existing_item:
-                    item_id = existing_item.hashcode
-                else:
-                    raise Exception("Failed to retrieve or insert Item record.")
-
+                session.close()
+                return 0
             processing_token = ProcessingToken(rss['language'])
             tokens = processing_token.process_tokens(item["title"], item["description"], item_id)
             for token in tokens:
-                try:
-                    session.add(token)
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-                    continue
+                session.add(token)
+            session.commit()
         session.close()
 
     def crawl(self):
