@@ -2,6 +2,7 @@ import math
 import os
 from datetime import datetime, timedelta
 
+import pytz
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -31,7 +32,8 @@ def find_most_relevant_items(words, limit=10):
     else:
         conditions = or_(*like_conditions)
 
-    current_date = datetime.now()
+    current_date = datetime.now(pytz.timezone('Europe/Paris'))
+    current_date_no_tz = current_date.replace(tzinfo=None)
     subquery = session.query(
         Token.item_id,
         func.sum(Token.rank).label('total_rank'),
@@ -48,7 +50,7 @@ def find_most_relevant_items(words, limit=10):
     query = session.query(
         Item,
         (subquery.c.total_rank - func.log(date_weight * func.extract('epoch',
-                                                                     current_date - subquery.c.max_pub_date) / 86400)).label(
+                                                                     current_date_no_tz - subquery.c.max_pub_date) / 86400)).label(
             'weighted_score')
     ).join(
         subquery, Item.hashcode == subquery.c.item_id
