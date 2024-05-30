@@ -16,11 +16,15 @@ nltk.download('stopwords')
 
 
 class ProcessingString:
-    alphabet = [chr(i) for i in range(97, 123)] + ['é', 'è', 'à', 'ç', ' ', 'ï', 'ë', "'", 'ê', 'ô', 'œ', "'"] + [chr(i) for i in range(48, 59)]
+    alphabet = [chr(i) for i in range(97, 123)] + ['é', 'è', 'à', 'ç', ' ', 'ï', 'ë', "'", 'ê', 'ô', 'œ', "'"] + [chr(i)
+                                                                                                                  for i
+                                                                                                                  in
+                                                                                                                  range(
+                                                                                                                      48,
+                                                                                                                      59)]
 
     @staticmethod
     def extract_values(text):
-
         pattern_balise = r'<.*?>'
         pattern_back = r'[\a\b\f\n\r\t\v]'
         text = sub(pattern_balise, ' ', text)
@@ -51,13 +55,12 @@ class ProcessingString:
     def stem_word(self, word):
         return self.stemmer.stem(word)
 
-
     def process_text(self, text):
+        text = text.lower()
         try:
             text = ProcessingString.extract_values(text)
         except:
             pass
-        text = text.lower()
         text = sub(r'\b\d+\b', '', text)
         text = sub(r'[_\W]', ' ', text)
         text = self.remove_stopwords(text)
