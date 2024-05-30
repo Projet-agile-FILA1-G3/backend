@@ -1,9 +1,13 @@
+import math
 import os
+from datetime import datetime, timedelta
 
+import pytz
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sqlalchemy import func, desc
+from sqlalchemy.sql.operators import or_
 
 from shared.models import Token, Item
 from shared import string_utils
@@ -17,26 +21,47 @@ load_dotenv('.env')
 
 def find_most_relevant_items(words, limit=10):
     session = get_session()
+
+    if not words:
+        return []
+
+    like_conditions = [Token.word.ilike(f"%{word}%") for word in words]
+
+    if len(like_conditions) == 1:
+        conditions = like_conditions[0]
+    else:
+        conditions = or_(*like_conditions)
+
+    current_date = datetime.now(pytz.timezone('Europe/Paris'))
+    current_date_no_tz = current_date.replace(tzinfo=None)
     subquery = session.query(
         Token.item_id,
-        func.sum(Token.rank).label('total_rank')
+        func.sum(Token.rank).label('total_rank'),
+        func.max(Item.pub_date).label('max_pub_date')
     ).filter(
-        Token.word.in_(words)
+        conditions
+    ).join(
+        Item, Token.item_id == Item.hashcode
     ).group_by(
         Token.item_id
     ).subquery()
 
+    date_weight = 1
     query = session.query(
-        Item
+        Item,
+        (subquery.c.total_rank - func.log(date_weight * func.extract('epoch',
+                                                                     current_date_no_tz - subquery.c.max_pub_date) / 86400)).label(
+            'weighted_score')
     ).join(
         subquery, Item.hashcode == subquery.c.item_id
     ).order_by(
-        desc(subquery.c.total_rank)
+        desc('weighted_score')
     ).limit(limit)
 
     most_relevant_items = query.all()
+    session.close()
 
-    return most_relevant_items
+    return [item for item, _ in most_relevant_items]
 
 
 @app.route('/search')
@@ -47,7 +72,6 @@ def search():
         return jsonify({"error": "No query provided"}), 400
 
     query_string = string_utils.ProcessingString().process_text(query_string)
-    # print(query_string)
     words = query_string.split(' ')
     limit = int(request.args.get('limit', 10))
 
