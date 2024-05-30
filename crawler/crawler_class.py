@@ -1,3 +1,5 @@
+import logging
+
 from requests import get
 from rss_parser import RSSParser, BaseParser
 from pandas import read_csv
@@ -183,6 +185,7 @@ class Crawler:
 
     def crawl(self):
         for url in self.urls:
+            logging.info(f"Processing {url}")
             rss_dict, item_list = Crawler.process_page(url)
             items = Crawler.process_items(item_list, url)
             self.save_data(rss_dict, items)
