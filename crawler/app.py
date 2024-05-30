@@ -13,7 +13,7 @@ method_crawler = getenv('CRAWLER_METHOD')
 schedule.every(sleeping_time).seconds.do(lambda: Crawler(method_crawler).crawl())
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logging.info("Crawler started")
     Crawler(method_crawler).crawl()
     while True:
