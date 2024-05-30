@@ -1,32 +1,45 @@
+import logging
 import os
+
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, Session, DeclarativeBase
+from sqlalchemy import create_engine, Engine
 
 from shared.models import Base
 
-if os.getenv('NODE_MODE') != 'production':
-    load_dotenv('.env')
 
-host = os.getenv('POSTGRES_HOST')
-port = os.getenv('POSTGRES_PORT')
-dbname = os.getenv('POSTGRES_DB')
-user = os.getenv('POSTGRES_USER')
-password = os.getenv('POSTGRES_PASSWORD')
+def get_db_config():
+    return {
+        'host': os.getenv('POSTGRES_HOST'),
+        'port': os.getenv('POSTGRES_PORT'),
+        'dbname': os.getenv('POSTGRES_DB'),
+        'user': os.getenv('POSTGRES_USER'),
+        'password': os.getenv('POSTGRES_PASSWORD')
+    }
 
-DATABASE_URL = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}'
 
-engine = create_engine(DATABASE_URL, echo=False)
-Session = sessionmaker(bind=engine)
+def get_db_url():
+    db_config = get_db_config()
+    return \
+        f'postgresql+psycopg2://{db_config["user"]}:{db_config["password"]}@{db_config["host"]}:{db_config["port"]}/{db_config["dbname"]}'
+
+
+def get_db_session():
+    return engine.connect()
 
 
 def get_session():
-    return Session()
+    return Session(engine)
 
 
-if __name__ == '__main__':
-    try:
-        Base.metadata.create_all(engine)
-        print("Tables created!")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+if os.getenv('POSTGRES_HOST') is None:
+    load_dotenv('../.env')
+engine = create_engine(get_db_url())
+
+# Required to create the tables
+from shared.models.Feed import Feed
+from shared.models.Item import Item
+from shared.models.Token import Token
+
+Base.metadata.create_all(engine)
+logging.info('Database tables created')
