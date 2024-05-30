@@ -36,7 +36,7 @@ def extract_values(text):
 
 
 def remove_stopwords(sentence):
-    return ' '.join([word for word in sentence.split() if word not in self.stopwords])
+    return ' '.join([word for word in sentence.split() if word not in stopwords])
 
 
 def stem_word(word):
