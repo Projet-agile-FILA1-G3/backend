@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from bs4 import BeautifulSoup
 from shared.db import get_session
@@ -33,12 +35,12 @@ class Explorer:
         valid_links = list(set(links) - set(links_in_db))
         session.close()
         if len(valid_links) > 1:
-            print("Add those Rss to DB, they will be crawled next time : ", valid_links)
+            logging.info("Add those Rss to DB, they will be crawled next time : %s", valid_links)
             for link in valid_links:
                 Explorer.save_link(link)
             return valid_links
         elif len(valid_links) == 1:
-            print("Add this Rss to DB, it will be crawled next time : ", valid_links)
+            logging.info("Add this Rss to DB, it will be crawled next time : %s", valid_links[0])
             Explorer.save_link(valid_links[0])
             return valid_links[0]
         else:
