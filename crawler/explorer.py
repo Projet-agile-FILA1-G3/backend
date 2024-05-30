@@ -24,6 +24,7 @@ class Explorer:
             session.close()
             return 1
         except Exception as error:
+            logging.error("Error while saving link %s : %s", link, error)
             return 0
 
     def get_links(self):
