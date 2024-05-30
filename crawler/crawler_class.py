@@ -1,12 +1,10 @@
 from requests import get
 from rss_parser import RSSParser, BaseParser
 from pandas import read_csv
-from uuid import uuid4
 from rss_parser.models.atom import Atom
 from rss_parser.models.rss import RSS
 from rss_parser.models.atom.feed import Tag, Entry
 import rss_parser.models.rss.channel as RSS_tag
-from re import sub
 
 from sqlalchemy.exc import IntegrityError
 
@@ -49,10 +47,13 @@ class Crawler:
     def recursive_crawling(urls, start_url, target_url):
         return None
 
-    def __init__(self, RSS_URLS_TYPE = 'csv', STORAGE_TYPE = 'postgres'):
+    def __init__(self, RSS_URLS_TYPE = 'csv', STORAGE_TYPE = 'postgres', DEF_URL = None):
         self.source_type = RSS_URLS_TYPE.lower()
         self.storage_type = STORAGE_TYPE.lower()
-        self.urls = self.get_URLs()
+        if DEF_URL != None:
+            self.urls = DEF_URL
+        else:
+            self.urls = self.get_URLs()
 
     def get_URLs(self):
         if self.source_type == 'csv' or self.source_type != 'db':
@@ -118,7 +119,7 @@ class Crawler:
     def crawl(self):
         for urls in self.urls:
             items = []
-            response = get(urls,  headers={"User-Agent": "curl/7.64.1"})
+            response = get(urls, headers={"User-Agent": "curl/7.64.1"})
             try:
                 item_list = RSSParser.parse(response.text, schema=RSS).channel.items
                 rss_info = RSSParser.parse(response.text, schema=RSS).channel
@@ -190,7 +191,3 @@ class Crawler:
             except Exception as error:
                 print("Fatal Error :", error)
                 pass
-
-
-if __name__ == '__main__':
-    test = Crawler('csv').crawl()
