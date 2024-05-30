@@ -7,7 +7,7 @@ from rss_parser.models.atom.feed import Tag, Entry
 import rss_parser.models.rss.channel as RSS_tag
 
 from sqlalchemy.exc import IntegrityError
-from explorer import Explorer
+from crawler import explorer
 from shared.db import get_session
 from shared.models import Rss, Item
 from token_management import ProcessingToken
@@ -102,7 +102,7 @@ class Crawler:
                             'url': item.content.links[0].attributes['href'],
                             'pub_date': Crawler.parse_date(item, 'atom')
                         }))
-                        Explorer(url, item.content.links[0].attributes['href'])
+                        explorer.Explorer(url, item.content.links[0].attributes['href'])
                 return items
             if type(item_list[0]) == RSS_tag.Tag[RSS_tag.Item]:
                 for item in item_list:
@@ -114,7 +114,7 @@ class Crawler:
                             'url': item.link.content,
                             'pub_date': Crawler.parse_date(item, 'rss')
                         }))
-                        Explorer(url, item.link.content)
+                        explorer.Explorer(url, item.link.content)
                 return items
         except Exception as error:
             print("Fatal Error :", error)

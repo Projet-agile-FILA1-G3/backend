@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from shared.db import get_session
 from shared.models import Rss, Item, Token
 from datetime import datetime
+import crawler_class
 
 class Explorer:
 
@@ -10,14 +11,17 @@ class Explorer:
     def transformUrl(url):
         return url.split('//')[1].split('/')[0]
 
+
     @staticmethod
     def save_link(link):
         try:
             session = get_session()
-            session.add(Rss(link, "A implémenter", "A implémenter", datetime.now().isoformat())).commit()
+            rss_dict, _ = crawler_class.Crawler.process_page(link)
+            session.add(Rss(link, rss_dict['description'], rss_dict['title'], datetime.now().isoformat()))
+            session.commit()
             session.close()
             return 1
-        except :
+        except Exception as error:
             return 0
 
     def get_links(self):
@@ -26,16 +30,17 @@ class Explorer:
         links = [link.get('href') for link in link_tags if (link.get('href') and link.get('type') == "application/rss+xml")]
         session = get_session()
         links_in_db = [url[0] for url in session.query(Rss.url).filter(Rss.url.in_(links)).all()]
-        print(set(links), set(links_in_db))
-        valid_links = set(links) - set(links_in_db)
+        valid_links = list(set(links) - set(links_in_db))
         session.close()
         if len(valid_links) > 1:
-            for link in list(valid_links):
+            print("Add those Rss to DB, they will be crawled next time : ", valid_links)
+            for link in valid_links:
                 Explorer.save_link(link)
-            return list(valid_links)
+            return valid_links
         elif len(valid_links) == 1:
-            Explorer.save_link(list(valid_links)[0])
-            return list(valid_links)[0]
+            print("Add this Rss to DB, it will be crawled next time : ", valid_links)
+            Explorer.save_link(valid_links[0])
+            return valid_links[0]
         else:
             return None
 
