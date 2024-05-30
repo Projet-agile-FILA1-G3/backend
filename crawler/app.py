@@ -15,6 +15,7 @@ schedule.every(sleeping_time).seconds.do(lambda: Crawler(method_crawler).crawl()
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logging.info("Crawler started")
+    Crawler(method_crawler).crawl()
     while True:
         schedule.run_pending()
         sleep(1)
