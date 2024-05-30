@@ -190,6 +190,3 @@ class Crawler:
             rss_dict, item_list = Crawler.process_page(url)
             items = Crawler.process_items(item_list, url)
             self.save_data(rss_dict, items)
-
-if __name__ == '__main__':
-    Crawler().crawl()
