@@ -34,7 +34,7 @@ class Explorer:
                 Explorer.save_link(link)
             return list(valid_links)
         elif len(valid_links) == 1:
-            Explorer.save_link(valid_links[0])
+            Explorer.save_link(list(valid_links)[0])
             return list(valid_links)[0]
         else:
             return None
