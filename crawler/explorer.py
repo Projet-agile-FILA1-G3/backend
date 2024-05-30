@@ -54,17 +54,3 @@ class Explorer:
 
     def __str__(self):
         return self.next or ""
-
-if __name__ == '__main__':
-    # Pas de Rss sur celui ci
-    A = Explorer("https://portail.basta.media/spip.php?page=backend", "https://www.ftm.eu/articles/how-brexit-failed-to-help-dying-fishing-industry")
-
-    # Celui ci oui
-    B = Explorer("https://portail.basta.media/spip.php?page=backend", "https://www.lemonde.fr/emploi/article/2024/05/29/l-ia-et-les-fantomes_6236120_1698637.html")
-
-    # meme lien
-    C = Explorer("https://portail.basta.media/spip.php?page=backend", "https://portail.basta.media/bite")
-
-    # existe dans la db
-    D= Explorer("https://portail.basta.media/spip.php?page=backend", "https://www.lemonde.fr/idees/article/2024/05/27/la-france-doit-assumer-une-ambition-industrielle-nationale-et-une-competitivite-intra-europeenne_6235873_3232.html")
-    print("A = ", A, "B = ", B, " C = ",C, " D = ", D)
