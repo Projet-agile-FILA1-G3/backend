@@ -19,7 +19,7 @@ class Explorer:
         try:
             session = get_session()
             rss_dict, _ = crawler_class.Crawler.process_page(link)
-            session.add(Rss(link, rss_dict['description'], rss_dict['title'], datetime.now().isoformat()))
+            session.add(Rss(link, rss_dict['description'] or "", rss_dict['title'] or "", datetime.now().isoformat()))
             session.commit()
             session.close()
             return 1
