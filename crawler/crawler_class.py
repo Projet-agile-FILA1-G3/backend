@@ -184,6 +184,7 @@ class Crawler:
         session.close()
 
     def crawl(self):
+        logging.info("Starting crawling of RSS feeds")
         for url in self.urls:
             logging.info(f"Processing {url}")
             rss_dict, item_list = Crawler.process_page(url)
