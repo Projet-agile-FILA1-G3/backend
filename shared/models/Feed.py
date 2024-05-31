@@ -1,10 +1,9 @@
 import uuid
 
 from sqlalchemy import Column, UUID, String
-from sqlalchemy.orm import relationship, DeclarativeBase, Mapped
+from sqlalchemy.orm import relationship, Mapped, session
 
 from shared.models import Base
-from shared.models.Item import Item
 
 
 class Feed(Base):
@@ -15,11 +14,19 @@ class Feed(Base):
     title = Column(String, nullable=False)
     last_fetching_date = Column(String, nullable=False)
 
-    items: Mapped[Item] = relationship(back_populates="feed", cascade="all, delete-orphan")
+    items = relationship("Item", back_populates="feed", cascade="all, delete-orphan")
 
-    def __init__(self, url, description, title, last_fetching_date, **kw: any):
+    def __init__(self, url, description, title, last_fetching_date, **kw):
         super().__init__(**kw)
         self.url = url
         self.description = description
         self.title = title
         self.last_fetching_date = last_fetching_date
+
+
+def find_by_id(session, feed_id: UUID) -> Feed:
+    return session.query(Feed).filter_by(id=feed_id).first()
+
+
+def get_all(session) -> [Feed]:
+    return session.query(Feed).all()
