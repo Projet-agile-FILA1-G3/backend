@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 
 from rss_parser import RSSParser
@@ -28,7 +29,15 @@ class FeedParser(ABC):
         return feed
 
     def parse_items(self) -> list[Item]:
-        return [self.parse_item(raw_item) for raw_item in self.get_raw_items()]
+        items = []
+        for raw_item in self.get_raw_items():
+            try:
+                item = self.parse_item(raw_item)
+                items.append(item)
+            except Exception as e:
+                logging.error(f'Error while parsing item: {e}')
+                logging.debug(f'Error while parsing item: {e}', exc_info=True)
+        return items
 
     @abstractmethod
     def parse_item(self, raw_item: any) -> Item:

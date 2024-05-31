@@ -48,6 +48,8 @@ class RssItemParsing(ItemParsing):
         return split_content(self.item.title)
 
     def get_description(self):
+        if not self.item.description:
+            raise Exception("No description")
         return split_content(self.item.description)
 
     def get_link(self):
