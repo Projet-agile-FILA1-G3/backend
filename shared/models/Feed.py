@@ -28,5 +28,14 @@ def find_by_id(session, feed_id: UUID) -> Feed:
     return session.query(Feed).filter_by(id=feed_id).first()
 
 
-def get_all(session) -> [Feed]:
+def find_all(session) -> [Feed]:
     return session.query(Feed).all()
+
+
+def exists(url: str, session) -> bool:
+    return session.query(Feed).filter(Feed.url == url).first() is not None
+
+
+def insert(session, feed: Feed):
+    session.add(feed)
+    session.commit()

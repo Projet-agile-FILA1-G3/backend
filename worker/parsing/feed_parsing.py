@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
+import requests
 from rss_parser import RSSParser
 from rss_parser.models.atom import Atom
 from rss_parser.models.rss import RSS
@@ -15,17 +16,20 @@ class FeedParser(ABC):
 
     def __init__(self, raw_feed: str, url: str, feed_id: int = None):
         self.raw_feed = raw_feed
+        if not raw_feed:
+            self.raw_feed = requests.get(url).text
         self.url = url
         self.feed_id = feed_id
 
-    def parse(self) -> Feed:
+    def parse(self, with_items: bool = True) -> Feed:
         feed = Feed(
             url=self.url,
             description=self.get_description(),
             title=self.get_title(),
             last_fetching_date=self.get_last_fetching_date()
         )
-        feed.items = self.parse_items()
+        if with_items:
+            feed.items = self.parse_items()
         return feed
 
     def parse_items(self) -> list[Item]:

@@ -1,26 +1,21 @@
 import logging
+from queue import Queue
+from threading import Thread
 
-from shared.db import get_session
-from shared.models import Feed
-from worker.crawler import crawl_feed_id
+from worker.crawler import crawler
+from worker.scheduler import scheduler
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.getLogger().setLevel(logging.DEBUG)
     logging.info("Starting worker")
-    print("Starting worker")
 
-    session = get_session()
-    feeds = Feed.get_all(session)
-    session.close()
+    fifo = Queue()
 
-    for feed in feeds:
-        crawl_feed_id(feed.id)
+    Thread(target=crawler, args=(fifo,), daemon=True).start()
 
+    Thread(target=scheduler, args=(fifo,), daemon=True).start()
 
-
-
-
-
-
-
+    while True:
+        pass
 
