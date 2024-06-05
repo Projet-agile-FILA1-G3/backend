@@ -26,12 +26,3 @@ class Item(Base):
         self.link = link
         self.pub_date = pub_date
         self.feed_id = feed_id
-
-
-def exists(session, item: Item):
-    return session.query(Item).filter(Item.hashcode == item.hashcode).first() is not None
-
-
-def insert(session, item: Item):
-    session.add(item)
-    session.commit()

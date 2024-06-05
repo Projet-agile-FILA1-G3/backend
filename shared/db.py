@@ -34,6 +34,7 @@ def get_session():
 
 if os.getenv('POSTGRES_HOST') is None:
     load_dotenv('../.env')
+
 engine = create_engine(get_db_url())
 
 # Required to create the tables

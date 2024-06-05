@@ -1,12 +1,17 @@
 import logging
 from queue import Queue
 
-import requests
-
 from shared.db import get_session
-from shared.models import Feed
-import shared.models.Item as Item
-from worker.parsing.feed_parsing import RssFeedParser, AtomFeedParser
+from shared.exception import EntityNotFoundException
+from shared.persistence.FeedRepository import FeedRepository
+from shared.persistence.ItemRepository import ItemRepository
+from worker.explorer import explore
+from worker.indexer import index_item
+from worker.parsing.feed_parsing import crawl_feed
+
+session = get_session()
+feedRepository = FeedRepository(session)
+itemRepository = ItemRepository(session)
 
 
 def crawler(queue: Queue):
@@ -16,52 +21,30 @@ def crawler(queue: Queue):
         feed_id = queue.get()
         if feed_id is None:
             break
-        logging.info(f'Started crawling feed {feed_id}')
         try:
             crawl_items_of_feed_id(feed_id)
         except Exception as e:
             logging.error(f'Failed to crawl feed {feed_id}: {e}')
+            logging.debug(f'Failed to crawl feed {feed_id}: {e}', exc_info=True)
         queue.task_done()
         logging.info(f'Finished crawling feed {feed_id}')
 
 
 def crawl_items_of_feed_id(feed_id):
-    session = get_session()
-    feed = Feed.find_by_id(session, feed_id)
-    session.close()
+    feed_db = feedRepository.find_by_id(feed_id)
 
-    if feed is None:
-        raise Exception(f'Feed with id {feed_id} not found')
+    if feed_db is None:
+        raise EntityNotFoundException(f'Feed {feed_id} not found')
+    logging.info(f'Crawling feed {feed_db.url}')
 
-    feed = crawl_feed(feed)
+    crawled_feed = crawl_feed(feed_db)
+    crawled_feed.id = feed_id
 
-    items = feed.items
-    session = get_session()
+    items = crawled_feed.items
 
     for item in items:
-        item.feed_id = feed.id
-        item.feed = feed
-        if not Item.exists(session, item):
-            Item.insert(session, item)
-    session.commit()
-    session.close()
-
-
-def crawl_feed(feed: Feed, with_items: bool = True) -> Feed:
-    raw_feed = fetch_full_raw_feed(feed)
-    try:
-        feed = RssFeedParser(raw_feed, url=feed.url, feed_id=feed.id).parse(with_items=with_items)
-    except Exception as e:
-        try:
-            feed = AtomFeedParser(raw_feed, url=feed.url, feed_id=feed.id).parse(with_items=with_items)
-        except Exception as e:
-            logging.error(f'Failed to parse feed as RSS and Atom: {e}')
-            return []
-    return feed
-
-
-def fetch_full_raw_feed(feed: Feed) -> str:
-    response = requests.get(feed.url, headers={"User-Agent": "curl/7.64.1"})
-    if response.status_code != 200:
-        raise Exception(f'Failed to fetch feed {feed.url}, status code {response.status_code}')
-    return response.text
+        item.feed = feed_db
+        if not itemRepository.exists(item):
+            itemRepository.store(item)
+            index_item(item)
+            explore(item)

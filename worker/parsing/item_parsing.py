@@ -8,7 +8,7 @@ def split_content(text):
     return text.split("content='")[0].split("' attributes")[0]
 
 
-class ItemParsing(ABC):
+class ItemParser(ABC):
     def __init__(self, parsed_item, feed_id):
         self.item = parsed_item
         self.feed_id = feed_id
@@ -39,7 +39,7 @@ class ItemParsing(ABC):
         return (datetime.now() - timedelta(days=2)).isoformat()
 
 
-class RssItemParsing(ItemParsing):
+class RssItemParser(ItemParser):
 
     def __init__(self, parsed_item, feed_id):
         super().__init__(parsed_item, feed_id)
@@ -66,7 +66,7 @@ class RssItemParsing(ItemParsing):
             return datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %Z").isoformat()
 
 
-class AtomItemParsing(ItemParsing):
+class AtomItemParser(ItemParser):
 
     def __init__(self, parsed_item, feed_id):
         super().__init__(parsed_item, feed_id)

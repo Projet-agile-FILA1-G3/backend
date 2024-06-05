@@ -1,26 +1,43 @@
+import logging
+
 import requests
 from bs4 import BeautifulSoup
 
 from shared.db import get_session
-from shared.models import Feed
-from worker.crawler import crawler, crawl_feed
+from shared.models.Feed import Feed
+from shared.models.Item import Item
+from shared.persistence.FeedRepository import FeedRepository
+from worker.parsing.feed_parsing import crawl_feed
+
+session = get_session()
+feedRepository = FeedRepository(session)
 
 
 # These functions are used to explore a website to find a new rss feed on it.
 
-def explore(link):
-    link = transform_url(link)
-    response = requests.get(link, headers={"User-Agent": "curl/7.64.1"}).text
+def explore(item: Item):
+    logging.info(f'Exploring {item.link}')
+    response = requests.get(item.link, headers={"User-Agent": "curl/7.64.1"}).text
     new_links = extract_links(response)
+    logging.info(f'Found {len(new_links)} new links')
     for new_link in new_links:
-        feed = crawl_feed(new_link, with_items=False)
-        session = get_session()
-        Feed.insert(session, feed)
-        session.commit()
-        session.close()
+        if not new_link.startswith('http'):
+            new_link = transform_url(item.link) + new_link
+        if feedRepository.exists_url(new_link):
+            continue
+
+        feed = Feed(url=new_link, title="", description="", last_fetching_date=None)
+        try:
+            feed = crawl_feed(feed, with_items=False)
+        except Exception as e:
+            logging.error(f'Failed to crawl feed {new_link}: {e}')
+            logging.debug(f'Failed to crawl feed {new_link}: {e}', exc_info=True)
+            continue
+        feedRepository.store(feed)
+        logging.info(f'Found new feed {new_link}')
 
 
-def transform_url(url):
+def transform_url(url: str):
     return url.split('//')[1].split('/')[0]
 
 
@@ -34,9 +51,7 @@ def extract_links(response):
 
 
 def get_not_saved_links(links):
-    session = get_session()
-    saved_feeds = Feed.find_all(session)
-    links_in_db = [url[0] for url in saved_feeds]
+    saved_feeds = feedRepository.find_all()
+    links_in_db = [feed.url for feed in saved_feeds]
     valid_links = list(set(links) - set(links_in_db))
-    session.close()
     return valid_links

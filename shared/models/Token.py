@@ -21,7 +21,3 @@ class Token(Base):
         self.word = word
         self.rank = rank
         self.item_id = item_id
-
-
-def find_by_word(word: str):
-    return Token.query.filter(Token.word == word).all()

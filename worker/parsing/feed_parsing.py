@@ -6,9 +6,31 @@ from rss_parser import RSSParser
 from rss_parser.models.atom import Atom
 from rss_parser.models.rss import RSS
 
-from worker.parsing.item_parsing import RssItemParsing, AtomItemParsing
+from shared.exception import FetchingException, ParsingException
+from worker.parsing.item_parsing import RssItemParser, AtomItemParser
 from shared.models.Feed import Feed
 from shared.models.Item import Item
+
+
+def crawl_feed(feed: Feed, with_items: bool = True) -> Feed:
+    raw_feed = fetch_full_raw_feed(feed.url)
+    try:
+        feed = RssFeedParser(raw_feed, url=feed.url, feed_id=feed.id).parse(with_items=with_items)
+    except Exception as e:
+        try:
+            feed = AtomFeedParser(raw_feed, url=feed.url, feed_id=feed.id).parse(with_items=with_items)
+        except Exception as e:
+            logging.debug(f'Failed to parse body as RSS or Atom: {raw_feed}', exc_info=True)
+            logging.debug(f'Failed to parse feed {feed.url}: {e}', exc_info=True)
+            raise ParsingException(f'Failed to parse feed {feed.url}: {e}')
+    return feed
+
+
+def fetch_full_raw_feed(feed_url : str) -> str:
+    response = requests.get(feed_url, headers={"User-Agent": "curl/7.64.1"})
+    if response.status_code != 200:
+        raise FetchingException(f'Failed to fetch feed {feed_url}, status code {response.status_code}')
+    return response.text
 
 
 # Abstract class
@@ -71,7 +93,7 @@ class RssFeedParser(FeedParser):
         self.parsed_feed = RSSParser.parse(raw_feed, schema=RSS)
 
     def parse_item(self, raw_item: any) -> Item:
-        return RssItemParsing(raw_item, self.feed_id).parse()
+        return RssItemParser(raw_item, self.feed_id).parse()
 
     def get_title(self) -> str:
         return self.parsed_feed.channel.title.content
@@ -99,7 +121,7 @@ class AtomFeedParser(FeedParser):
         self.parsed_feed = RSSParser.parse(raw_feed, schema=Atom)
 
     def parse_item(self, raw_item: any) -> Item:
-        return AtomItemParsing(raw_item, self.feed_id).parse()
+        return AtomItemParser(raw_item, self.feed_id).parse()
 
     def get_title(self) -> str:
         return self.parsed_feed.feed.content.title.content
