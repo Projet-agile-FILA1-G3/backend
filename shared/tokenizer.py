@@ -8,21 +8,21 @@ alphabet = ([chr(i) for i in range(97, 123)] + ['é', 'è', 'à', 'ç', ' ', 'ï
             + [chr(i) for i in range(48, 59)])
 
 stopwords = {
-    'french': set(stopwords.words('french')),
-    'englsh': set(stopwords.words('english'))
+    'fr': set(stopwords.words('french')),
+    'en': set(stopwords.words('english'))
 }
 
 stemmer = {
-    'french': SnowballStemmer('french'),
-    'english': SnowballStemmer('english')
+    'fr': SnowballStemmer('french'),
+    'en': SnowballStemmer('english')
 }
 
 
-def get_tokens(string: str):
-    return process_text(string).split()
+def get_tokens(string: str, language: str):
+    return process_text(string, language)
 
 
-def process_text(text):
+def process_text(text, language):
     text = text.lower()
     try:
         text = extract_values(text)
@@ -30,10 +30,10 @@ def process_text(text):
         pass
     text = sub(r'\b\d+\b', '', text)
     text = sub(r'[_\W]', ' ', text)
-    text = remove_stopwords(text)
-    tokens = [stem_word(word) for word in text.split()]
+    text = remove_stopwords(text, language)
+    tokens = [stem_word(word, language) for word in text.split()]
     tokens = [token for token in tokens if len(token) > 1]
-    return ' '.join(tokens)
+    return tokens
 
 
 def extract_values(text):
@@ -52,9 +52,9 @@ def extract_values(text):
     return ret
 
 
-def remove_stopwords(sentence):
-    return ' '.join([word for word in sentence.split() if word not in stopwords])
+def remove_stopwords(sentence, language):
+    return ' '.join([word for word in sentence.split() if word not in stopwords[language]])
 
 
-def stem_word(word):
-    return stemmer['french'].stem(word)
+def stem_word(word, language):
+    return stemmer[language].stem(word)

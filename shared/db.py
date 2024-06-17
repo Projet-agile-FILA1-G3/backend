@@ -42,5 +42,7 @@ from shared.models.Feed import Feed
 from shared.models.Item import Item
 from shared.models.Token import Token
 
-Base.metadata.create_all(engine)
-logging.info('Database tables created')
+def init_db():
+    Base.metadata.create_all(engine)
+    logging.info("Database initialized")
+

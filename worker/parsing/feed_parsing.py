@@ -48,7 +48,8 @@ class FeedParser(ABC):
             url=self.url,
             description=self.get_description(),
             title=self.get_title(),
-            last_fetching_date=self.get_last_fetching_date()
+            last_fetching_date=self.get_last_fetching_date(),
+            lang=self.get_lang()
         )
         if with_items:
             feed.items = self.parse_items()
@@ -85,6 +86,10 @@ class FeedParser(ABC):
     def get_raw_items(self) -> list[any]:
         pass
 
+    @abstractmethod
+    def get_lang(self) -> str or None:
+        pass
+
 
 class RssFeedParser(FeedParser):
 
@@ -113,6 +118,11 @@ class RssFeedParser(FeedParser):
     def get_raw_items(self) -> list[any]:
         return self.parsed_feed.channel.items
 
+    def get_lang(self) -> str or None:
+        if self.parsed_feed.channel.language:
+            return self.parsed_feed.channel.language.content
+        return None
+
 
 class AtomFeedParser(FeedParser):
 
@@ -134,3 +144,7 @@ class AtomFeedParser(FeedParser):
 
     def get_raw_items(self) -> list[any]:
         return self.parsed_feed.feed.content.entries
+
+    def get_lang(self) -> str or None:
+        # TODO : find a way to get the language from the feed
+        pass

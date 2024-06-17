@@ -5,7 +5,7 @@ from shared.db import get_session
 from shared.models.Item import Item
 from shared.models import Token
 from shared.persistence.TokenRepository import TokenRepository
-from shared.tokenizer import process_text, get_tokens
+from shared.tokenizer import get_tokens
 
 session = get_session()
 tokenRepository = TokenRepository(session)
@@ -15,8 +15,8 @@ def index_item(item: Item):
     logging.info(f'Indexing item {item.hashcode}')
 
     # Indexing
-    title_tokens = get_tokens(item.title)
-    description_tokens = get_tokens(item.description)
+    title_tokens = get_tokens(item.title, item.feed.lang)
+    description_tokens = get_tokens(item.description, item.feed.lang)
     word_counts = Counter()
 
     # Ranking

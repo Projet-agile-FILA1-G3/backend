@@ -18,7 +18,7 @@ def find_most_relevant_items(query, limit=10):
     if not query:
         return []
 
-    words = get_tokens(query)
+    words = get_tokens(query, 'fr')
 
     like_conditions = [Token.word.ilike(f"%{word}%") for word in words]
 

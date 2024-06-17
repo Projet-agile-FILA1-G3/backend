@@ -2,28 +2,33 @@ import logging
 import os
 
 from queue import Queue
-from threading import Thread
-from time import sleep
+
+from shared.db import init_db
+from worker.scheduler import scheduler_init
 
 if os.getenv('ENV') != 'production':
     from dotenv import load_dotenv
     load_dotenv()
 
 from worker.crawler import crawler
-from worker.scheduler import scheduler
-
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    logging.getLogger().setLevel(os.getenv('LOG_LEVEL', logging.INFO))
+    # Initialize logging
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    log_level = logging.getLevelName(os.getenv('LOG_LEVEL', 'INFO'))
+    logging.getLogger().setLevel(log_level)
     logging.info("Starting worker")
 
-    fifo = Queue()
+    try:
+        init_db()
+    except:
+        logging.error(f"Failed to initialize database: {os.getenv('POSTGRES_HOST')}")
+        exit(1)
 
-    Thread(target=crawler, args=(fifo,), daemon=True).start()
+    # Init APP
+    feed_to_crawl = Queue()
+    scheduler_init(feed_to_crawl)
 
-    Thread(target=scheduler, args=(fifo,), daemon=True).start()
-
-    while True:
-        sleep(1)
-
+    crawler(feed_to_crawl)

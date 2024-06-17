@@ -23,6 +23,8 @@ def explore(item: Item):
     for new_link in new_links:
         if not new_link.startswith('http'):
             new_link = transform_url(item.link) + new_link
+
+        # Condition to skip exploring
         if feedRepository.exists_url(new_link):
             continue
 
@@ -33,6 +35,11 @@ def explore(item: Item):
             logging.error(f'Failed to crawl feed {new_link}: {e}')
             logging.debug(f'Failed to crawl feed {new_link}: {e}', exc_info=True)
             continue
+
+        # Default language is the language of the parent feed
+        if feed.lang is None:
+            feed.lang = item.feed.lang
+
         feedRepository.store(feed)
         logging.info(f'Found new feed {new_link}')
 

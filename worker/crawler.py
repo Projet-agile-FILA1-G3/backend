@@ -1,5 +1,8 @@
 import logging
 from queue import Queue
+from time import sleep
+
+import schedule
 
 from shared.db import get_session
 from shared.exception import EntityNotFoundException
@@ -18,8 +21,11 @@ def crawler(queue: Queue):
     logging.info('Starting crawler')
     # Wait for new item to crawl
     while True:
+        schedule.run_pending()
         feed_id = queue.get()
         if feed_id is None:
+            # reduce cpu intensiveness of the app
+            sleep(60)
             break
         try:
             crawl_items_of_feed_id(feed_id)
@@ -46,5 +52,13 @@ def crawl_items_of_feed_id(feed_id):
         item.feed = feed_db
         if not itemRepository.exists(item):
             itemRepository.store(item)
+
+            # Indexing
             index_item(item)
+
+            # Exploring
             explore(item)
+
+    feedRepository.update_last_fetching_date(feed_id)
+    logging.info(f'Finished crawling feed {feed_db.url}')
+

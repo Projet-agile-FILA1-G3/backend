@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from shared.models.Feed import Feed
@@ -22,6 +24,11 @@ class FeedRepository:
 
     def store(self, feed) -> None:
         self.session.add(feed)
+        self.session.commit()
+
+    def update_last_fetching_date(self, feed_id):
+        feed = self.find_by_id(feed_id)
+        feed.last_fetching_date = datetime.now()
         self.session.commit()
 
 
