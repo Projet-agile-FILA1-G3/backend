@@ -2,6 +2,10 @@ import logging
 import os
 
 from queue import Queue
+from threading import Thread
+from time import sleep
+
+import schedule
 
 from shared.db import init_db
 from worker.scheduler import scheduler_init
@@ -32,3 +36,8 @@ if __name__ == '__main__':
     scheduler_init(feed_to_crawl)
 
     crawler(feed_to_crawl)
+    Thread(target=crawler, args=(feed_to_crawl,)).start()
+
+    while True:
+        schedule.run_pending()
+        sleep(1)
