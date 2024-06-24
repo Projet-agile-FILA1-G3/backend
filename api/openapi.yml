@@ -7,31 +7,119 @@ info:
 paths:
   /search:
     get:
-      description: perform a search among rss feed indexed in the application
+      description: Perform a search among RSS feeds indexed in the application.
       parameters:
         - in: query
           name: query
           schema:
             type: string
           required: true
+          description: The search query string.
       responses:
         '200':
-          description: Query correctly performed
+          description: Query correctly performed.
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/QueryResult'
+        '204':
+          description: No relevant items found.
         '400':
-          description: Bad request, e.g missing param
-
+          description: Bad request, e.g., missing parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
-          description: Internal server error
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /metrics:
+    get:
+      description: Get word metrics over time.
+      parameters:
+        - in: query
+          name: word
+          schema:
+            type: string
+          required: true
+          description: The word to get metrics for.
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date-time
+          required: true
+          description: The start date for the metrics in ISO 8601 format.
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date-time
+          required: true
+          description: The end date for the metrics in ISO 8601 format.
+        - in: query
+          name: interval
+          schema:
+            type: string
+            enum: [hour, day, week]
+          required: false
+          description: The interval for the metrics. Default is "day".
+      responses:
+        '200':
+          description: Metrics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetricResult'
+        '204':
+          description: No metrics found.
+        '400':
+          description: Bad request, e.g., missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     QueryResult:
       type: object
       properties:
+        hashcode:
+          type: string
         title:
+          type: string
+        description:
+          type: string
+        link:
+          type: string
+        pub_date:
+          type: string
+          format: date-time
+        feed_id:
+          type: string
+    MetricResult:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        count:
+          type: integer
+    Error:
+      type: object
+      properties:
+        error:
           type: string
