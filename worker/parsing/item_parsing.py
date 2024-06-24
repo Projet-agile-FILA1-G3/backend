@@ -35,6 +35,10 @@ class ItemParser(ABC):
     def get_link(self):
         pass
 
+    @abstractmethod
+    def get_audio(self):
+        pass
+
     def get_pub_date(self):
         return (datetime.now() - timedelta(days=2)).isoformat()
 
@@ -54,6 +58,13 @@ class RssItemParser(ItemParser):
 
     def get_link(self):
         return self.item.link.content
+
+    def get_audio(self):
+        try:
+            if self.item.enclosure.attributes['type'] == 'audio/mpeg':
+                return self.item.enclosure.attributes['url']
+        except:
+            return None
 
     def get_pub_date(self):
         if not self.item.pub_date:
@@ -79,6 +90,10 @@ class AtomItemParser(ItemParser):
 
     def get_link(self):
         return self.item.content.links[0].attributes['href']
+
+    def get_audio(self):
+        # TODO : Il faut que l'on teste avec du atom et du podcast
+        return None
 
     def get_pub_date(self):
         if not self.item.content.updated:
