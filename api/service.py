@@ -8,7 +8,7 @@ from shared.db import get_session
 from shared.models.Item import Item
 from shared.models.Token import Token
 from shared.persistence.TokenRepository import TokenRepository
-from shared.tokenizer import get_tokens
+from shared.tokenizer import get_tokens, stem_word
 
 session = get_session()
 tokenRepository = TokenRepository(session)
@@ -57,3 +57,36 @@ def find_most_relevant_items(query, limit=10):
     session.close()
 
     return [item for item, _ in most_relevant_items]
+
+
+def get_metrics_from_word(word, start_date, end_date, interval):
+    if not word:
+        return []
+
+    word = stem_word(word, 'fr')
+
+    start_date_no_tz = start_date.replace(tzinfo=None)
+    end_date_no_tz = end_date.replace(tzinfo=None)
+
+    query = session.query(
+        func.date_trunc(interval, Item.pub_date).label('date'),
+        func.count(Token.word).label('count')
+    ).join(
+        Item, Token.item_id == Item.hashcode
+    ).filter(
+        Token.word == word,
+        Item.pub_date >= start_date_no_tz,
+        Item.pub_date <= end_date_no_tz
+    ).group_by(
+        func.date_trunc(interval, Item.pub_date)
+    ).order_by(
+        func.date_trunc(interval, Item.pub_date)
+    )
+
+    metrics = query.all()
+    session.close()
+
+    result = [{'date': record.date.isoformat(), 'count': record.count} for record in metrics]
+
+    return result
+
