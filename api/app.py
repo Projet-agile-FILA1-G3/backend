@@ -1,15 +1,12 @@
 import os
 
-from flask import Flask
-from flask_cors import CORS
-
 from shared.db import init_db
 
 if os.getenv('ENV') != 'production':
     from dotenv import load_dotenv
     load_dotenv()
 
-from api.controller import search, app
+from api.controller import app
 
 if __name__ == '__main__':
     init_db()

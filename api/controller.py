@@ -1,10 +1,13 @@
+from datetime import datetime
+
 from flask import request, jsonify, Flask
 from flask_cors import CORS
 
-from api.service import find_most_relevant_items
+from api.service import get_metrics_from_word, find_most_relevant_items
 
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route('/search')
 def search():
@@ -28,3 +31,24 @@ def search():
     } for item in most_relevant_items]
 
     return jsonify(results), 200
+
+
+@app.route('/metrics')
+def get_word_metrics():
+    word = request.args.get('word', '')
+    start_date_str = request.args.get('start_date', None)
+    end_date_str = request.args.get('end_date', None)
+    interval = request.args.get('interval', 'day').lower()
+
+    if not word or not start_date_str or not end_date_str:
+        return jsonify({"error": "Bad parameters"}), 400
+
+    if interval not in ['hour', 'day', 'week']:
+        return jsonify({"error": "Invalid interval parameter"}), 400
+
+    metrics = get_metrics_from_word(word, datetime.fromisoformat(start_date_str), datetime.fromisoformat(end_date_str), interval)
+
+    if len(metrics) == 0:
+        return jsonify({"message": "No metrics found"}), 204
+
+    return jsonify(metrics), 200
