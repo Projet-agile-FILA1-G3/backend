@@ -42,7 +42,6 @@ if __name__ == '__main__':
     feed_to_crawl = Queue()
     scheduler_init(feed_to_crawl)
 
-    crawler(feed_to_crawl)
     Thread(target=crawler, args=(feed_to_crawl,)).start()
 
     while True:
