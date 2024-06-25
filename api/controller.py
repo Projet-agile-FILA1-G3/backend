@@ -24,7 +24,8 @@ def search():
         'description': item.description,
         'link': item.link,
         'pub_date': item.pub_date.isoformat(),
-        'feed_id': str(item.feed_id)
+        'feed_id': str(item.feed_id),
+        'audio_link': item.audio_link
     } for item in most_relevant_items]
 
     return jsonify(results), 200
