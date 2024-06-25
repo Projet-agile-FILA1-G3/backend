@@ -47,7 +47,7 @@ def crawl_items_of_feed_id(feed_id):
     crawled_feed.id = feed_id
 
     items = crawled_feed.items
-
+    logging.debug(f"{len(items)} items in feed {feed_id}")
     for item in items:
         item.feed = feed_db
         if not itemRepository.exists(item):

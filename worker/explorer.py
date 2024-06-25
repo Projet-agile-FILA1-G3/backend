@@ -16,6 +16,9 @@ feedRepository = FeedRepository(session)
 # These functions are used to explore a website to find a new rss feed on it.
 
 def explore(item: Item):
+    if item.audio_link != None:
+        return True
+
     logging.info(f'Exploring {item.link}')
     response = requests.get(item.link, headers={"User-Agent": "curl/7.64.1"}).text
     new_links = extract_links(response)
