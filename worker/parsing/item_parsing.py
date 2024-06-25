@@ -19,7 +19,8 @@ class ItemParser(ABC):
             description=self.get_description(),
             link=self.get_link(),
             pub_date=self.get_pub_date(),
-            feed_id=self.feed_id
+            feed_id=self.feed_id,
+            audio_link=self.get_audio()
         )
         return item
 
@@ -57,7 +58,10 @@ class RssItemParser(ItemParser):
         return split_content(self.item.description)
 
     def get_link(self):
-        return self.item.link.content
+        try:
+            return self.item.link.content
+        except:
+            return self.get_audio()
 
     def get_audio(self):
         try:
