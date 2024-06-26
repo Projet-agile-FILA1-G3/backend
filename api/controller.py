@@ -6,10 +6,10 @@ import requests
 
 from flask import request, jsonify, Flask, render_template
 from flask_cors import CORS
-
-from api.service import get_metrics_from_word, find_most_relevant_items
 from api.websub_service import websub_treatment, notify_subscribers
 from shared.models.Subscriptions import Subscriptions
+from api.service import get_metrics_from_query, find_most_relevant_items, is_worker_alive, get_last_fetching_date, \
+    get_number_of_articles, get_number_of_feed
 
 app = Flask(__name__)
 CORS(app)
@@ -33,7 +33,8 @@ def search():
         'description': item.description,
         'link': item.link,
         'pub_date': item.pub_date.isoformat(),
-        'feed_id': str(item.feed_id)
+        'feed_id': str(item.feed_id),
+        'audio_link': item.audio_link
     } for item in most_relevant_items]
 
     return jsonify(results), 200
@@ -41,19 +42,18 @@ def search():
 
 @app.route('/metrics')
 def get_word_metrics():
-    word = request.args.get('word', '')
+    query = request.args.get('query', '')
     start_date_str = request.args.get('start_date', None)
     end_date_str = request.args.get('end_date', None)
     interval = request.args.get('interval', 'day').lower()
 
-    if not word or not start_date_str or not end_date_str:
+    if not query or not start_date_str or not end_date_str:
         return jsonify({"error": "Bad parameters"}), 400
 
     if interval not in ['hour', 'day', 'week']:
         return jsonify({"error": "Invalid interval parameter"}), 400
 
-    metrics = get_metrics_from_word(word, datetime.fromisoformat(start_date_str), datetime.fromisoformat(end_date_str),
-                                    interval)
+    metrics = get_metrics_from_query(query, datetime.fromisoformat(start_date_str), datetime.fromisoformat(end_date_str), interval)
 
     if len(metrics) == 0:
         return jsonify({"message": "No metrics found"}), 204
@@ -97,3 +97,13 @@ def receive_feed_notification():
     logging.info(f"Notification sent successfully for feed: {feed_url}")
 
     return jsonify({"message": "Notification sent successfully"}), 200
+  
+
+@app.route('/healthcheck')
+def healthcheck():
+    return jsonify({
+        "status": is_worker_alive() and "OK" or "DOWN",
+        "last_fetching_date": get_last_fetching_date().isoformat(),
+        "number_of_articles": get_number_of_articles(),
+        "number_of_feeds": get_number_of_feed()
+    })

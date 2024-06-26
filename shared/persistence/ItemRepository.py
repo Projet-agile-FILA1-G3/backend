@@ -1,3 +1,5 @@
+import logging
+
 from shared.models.Item import Item
 
 
@@ -7,6 +9,9 @@ class ItemRepository:
 
     def find_all(self) -> [Item]:
         return self.session.query(Item).all()
+
+    def count(self) -> int:
+        return self.session.query(Item).count()
 
     def find_by_hashcode(self, item_hashcode) -> Item:
         return self.session.query(Item).filter(Item.hashcode == item_hashcode).first()
