@@ -19,9 +19,9 @@ feedRepository = FeedRepository(session)
 itemRepository = ItemRepository(session)
 
 
-def find_most_relevant_items(query, limit=10):
+def find_most_relevant_items(query, page=1, per_page=10):
     if not query:
-        return []
+        return [], 0
 
     words = get_tokens(query, 'fr')
 
@@ -56,12 +56,15 @@ def find_most_relevant_items(query, limit=10):
         subquery, Item.hashcode == subquery.c.item_id
     ).order_by(
         desc('weighted_score')
-    ).limit(limit)
+    )
+
+    total_items = query.count()
+    query = query.limit(per_page).offset((page - 1) * per_page)
 
     most_relevant_items = query.all()
     session.close()
 
-    return [item for item, _ in most_relevant_items]
+    return [item for item, _ in most_relevant_items], total_items
 
 
 def get_metrics_from_query(query, start_date, end_date, interval):
