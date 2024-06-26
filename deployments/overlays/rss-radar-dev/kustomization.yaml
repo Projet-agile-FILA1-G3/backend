@@ -34,6 +34,9 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/2/value
         value: postgresql.rss-radar-dev.svc.cluster.local
+      - op: replace
+        path: /spec/template/spec/containers/0/env/3/value
+        value: "5433"
   - target:
       kind: Service
       name: api-service
