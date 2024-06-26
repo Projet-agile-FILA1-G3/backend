@@ -1,6 +1,8 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Column, UUID, String
+import pytz
+from sqlalchemy import Column, UUID, String, DateTime
 from sqlalchemy.orm import relationship, Mapped, session
 
 from shared.models import Base
@@ -14,6 +16,7 @@ class Subscriptions(Base):
     hub_topic = Column(String, nullable=False)
     hub_lease_seconds = Column(String, nullable=False)
     hub_secret = Column(String, nullable=False)
+    subscription_date = Column(DateTime, default=datetime.now(pytz.timezone('Europe/Paris')))
 
     def __init__(self, hub_callback, hub_mode, hub_topic, hub_lease_seconds, hub_secret, **kw):
         super().__init__(**kw)

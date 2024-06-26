@@ -8,7 +8,7 @@ from flask import request, jsonify, Flask, render_template
 from flask_cors import CORS
 
 from api.service import get_metrics_from_word, find_most_relevant_items
-from api.websub_service import websub_treatment
+from api.websub_service import websub_treatment, notify_subscribers
 from shared.models.Subscriptions import Subscriptions
 
 app = Flask(__name__)
@@ -63,7 +63,16 @@ def get_word_metrics():
 
 @app.route("/websub", methods=["GET", "POST"])
 def websub_endpoint():
-    if request.method == "POST":
+    if request.method == "GET":
+        hub_mode = request.args.get("hub.mode")
+        hub_challenge = request.args.get("hub.challenge")
+
+        if hub_mode == "subscribe":
+            return hub_challenge, 200
+        else:
+            return jsonify({"error": "Invalid Mode"}), 400
+
+    else:
         hub_callback = request.form.get("hub.callback")
         hub_mode = request.form.get("hub.mode")
         hub_topic = request.form.get("hub.topic")
@@ -75,4 +84,16 @@ def websub_endpoint():
 
         return websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_seconds)
 
-    return render_template("index.html", title="RSS Radar WebSub Endpoint")
+
+@app.route('/notify', methods=['POST'])
+def receive_feed_notification():
+    data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({"error": "Invalid request, 'url' is required"}), 400
+
+    feed_url = data['url']
+
+    notify_subscribers(feed_url)
+    logging.info(f"Notification sent successfully for feed: {feed_url}")
+
+    return jsonify({"message": "Notification sent successfully"}), 200
