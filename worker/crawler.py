@@ -6,8 +6,10 @@ import schedule
 
 from shared.db import get_session
 from shared.exception import EntityNotFoundException
+from shared.models.Subscriptions import Subscriptions
 from shared.persistence.FeedRepository import FeedRepository
 from shared.persistence.ItemRepository import ItemRepository
+from worker.crawling_notifyer import notify_api
 from worker.explorer import explore
 from worker.indexer import index_item
 from worker.parsing.feed_parsing import crawl_feed
@@ -60,5 +62,10 @@ def crawl_items_of_feed_id(feed_id):
             explore(item)
 
     feedRepository.update_last_fetching_date(feed_id)
-    logging.info(f'Finished crawling feed {feed_db.url}')
 
+    subscription_count = session.query(Subscriptions).filter_by(hub_topic=feed_db.url).count()
+
+    if subscription_count > 0:
+        notify_api(feed_db.url)
+
+    logging.info(f'Finished crawling feed {feed_db.url}')
