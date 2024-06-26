@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -5,15 +6,15 @@ from datetime import datetime, timedelta
 import requests
 from flask import jsonify
 
+from api.utils import generate_hmac
 from shared.db import get_session
 from shared.models.Feed import Feed
 from shared.models.Item import Item
 from shared.models.Subscriptions import Subscriptions
 
-session = get_session()
-
 
 def websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_seconds):
+    session = get_session()
     if hub_mode == "subscribe":
         challenge = str(uuid.uuid4())
         response = requests.get(hub_callback,
@@ -48,6 +49,7 @@ def websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_se
 
 
 def notify_subscribers(feed_url):
+    session = get_session()
     feed = session.query(Feed).filter_by(url=feed_url).first()
     if not feed:
         logging.info(f"Feed not found: {feed_url}")
@@ -57,7 +59,7 @@ def notify_subscribers(feed_url):
     subscriptions = session.query(Subscriptions).filter_by(hub_topic=feed_url).all()
 
     for subscription in subscriptions:
-        expiration_date = subscription.subscription_date + timedelta(seconds=subscription.hub_lease_seconds)
+        expiration_date = subscription.subscription_date + timedelta(seconds=int(subscription.hub_lease_seconds))
         if expiration_date < datetime.now():
             session.delete(subscription)
             logging.info(f"Subscription expired: {subscription.id}")
@@ -71,10 +73,13 @@ def notify_subscribers(feed_url):
                 "link": item.link,
                 "pub_date": item.pub_date.isoformat()
             }
+            message = json.dumps(data)
+            signature = generate_hmac(subscription.hub_secret, message)
             headers = {
                 "Content-Type": "application/json",
-                "X-Hub-Signature": subscription.hub_secret
+                "X-Hub-Signature": f"sha1={signature}"
             }
-            response = requests.post(subscription.hub_callback, json=data, headers=headers)
+            response = requests.post(subscription.hub_callback, data=message, headers=headers)
             if response.status_code != 200:
                 logging.info(f"Failed to notify subscriber {subscription.hub_callback}")
+    session.close()
