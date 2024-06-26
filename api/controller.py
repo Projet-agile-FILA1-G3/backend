@@ -53,3 +53,13 @@ def get_word_metrics():
         return jsonify({"message": "No metrics found"}), 204
 
     return jsonify(metrics), 200
+
+
+@app.route('/healthcheck')
+def healthcheck():
+    return jsonify({
+        "status": is_worker_alive(),
+        "last_fetching_date": get_last_fetching_date().isoformat(),
+        "number_of_articles": get_number_of_articles(),
+        "number_of_feeds": get_number_of_feed()
+    })

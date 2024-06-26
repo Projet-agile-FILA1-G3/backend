@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from operator import or_
 
@@ -7,11 +8,15 @@ from sqlalchemy import func, desc, and_
 from shared.db import get_session
 from shared.models.Item import Item
 from shared.models.Token import Token
+from shared.persistence.FeedRepository import FeedRepository
+from shared.persistence.ItemRepository import ItemRepository
 from shared.persistence.TokenRepository import TokenRepository
-from shared.tokenizer import get_tokens, stem_word
+from shared.tokenizer import get_tokens
 
 session = get_session()
 tokenRepository = TokenRepository(session)
+feedRepository = FeedRepository(session)
+itemRepository = ItemRepository(session)
 
 
 def find_most_relevant_items(query, limit=10):
@@ -97,3 +102,25 @@ def get_metrics_from_query(query, start_date, end_date, interval):
 
     return result
 
+
+def get_last_fetching_date():
+    last_fetched_feed = feedRepository.find_last_fetched()
+    last_fetched_feed_date = datetime.fromisoformat(last_fetched_feed.last_fetching_date)
+    # set timezone to Europe/Paris
+    last_fetched_feed_date = last_fetched_feed_date.astimezone(pytz.timezone('Europe/Paris'))
+    return last_fetched_feed_date
+
+
+def is_worker_alive():
+    last_fetched_date = get_last_fetching_date()
+    if not last_fetched_date:
+        return False
+    return (datetime.now(pytz.timezone('Europe/Paris')) - last_fetched_date).total_seconds() < float(os.getenv('SLEEPING_TIME', 1800))
+
+
+def get_number_of_feed():
+    return feedRepository.count()
+
+
+def get_number_of_articles():
+    return itemRepository.count()
