@@ -13,6 +13,9 @@ class FeedRepository:
     def find_all(self) -> [Feed]:
         return self.session.query(Feed).all()
 
+    def count(self) -> int:
+        return self.session.query(Feed).count()
+
     def find_by_id(self, feed_id) -> Feed or None:
         return self.session.query(Feed).filter(Feed.id == feed_id).first()
 
@@ -30,5 +33,8 @@ class FeedRepository:
         feed = self.find_by_id(feed_id)
         feed.last_fetching_date = datetime.now()
         self.session.commit()
+
+    def find_last_fetched(self):
+        return self.session.query(Feed).order_by(Feed.last_fetching_date.desc()).first()
 
 

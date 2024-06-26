@@ -3,7 +3,8 @@ from datetime import datetime
 from flask import request, jsonify, Flask
 from flask_cors import CORS
 
-from api.service import get_metrics_from_query, find_most_relevant_items
+from api.service import get_metrics_from_query, find_most_relevant_items, is_worker_alive, get_last_fetching_date, \
+    get_number_of_articles, get_number_of_feed
 
 app = Flask(__name__)
 CORS(app)
@@ -53,3 +54,13 @@ def get_word_metrics():
         return jsonify({"message": "No metrics found"}), 204
 
     return jsonify(metrics), 200
+
+
+@app.route('/healthcheck')
+def healthcheck():
+    return jsonify({
+        "status": is_worker_alive() and "OK" or "DOWN",
+        "last_fetching_date": get_last_fetching_date().isoformat(),
+        "number_of_articles": get_number_of_articles(),
+        "number_of_feeds": get_number_of_feed()
+    })
