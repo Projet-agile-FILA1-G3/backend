@@ -106,7 +106,9 @@ def get_metrics_from_query(query, start_date, end_date, interval):
 def get_last_fetching_date():
     last_fetched_feed = feedRepository.find_last_fetched()
     last_fetched_feed_date = datetime.fromisoformat(last_fetched_feed.last_fetching_date)
-    # set timezone to Europe/Paris
+    # transform the date to the timezone of europe/paris
+    # add 2 hours to the date
+    last_fetched_feed_date = last_fetched_feed_date.replace(tzinfo=pytz.utc)
     last_fetched_feed_date = last_fetched_feed_date.astimezone(pytz.timezone('Europe/Paris'))
     return last_fetched_feed_date
 
@@ -115,7 +117,8 @@ def is_worker_alive():
     last_fetched_date = get_last_fetching_date()
     if not last_fetched_date:
         return False
-    return (datetime.now(pytz.timezone('Europe/Paris')) - last_fetched_date).total_seconds() < float(os.getenv('SLEEPING_TIME', 1800))
+    diff = (datetime.now(pytz.timezone('Europe/Paris')) - last_fetched_date).total_seconds()
+    return diff < float(os.getenv('SLEEPING_TIME', 1800))
 
 
 def get_number_of_feed():
