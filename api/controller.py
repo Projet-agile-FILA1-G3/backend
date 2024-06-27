@@ -18,11 +18,13 @@ CORS(app)
 @app.route('/search')
 def search():
     query_string = request.args.get('query', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
 
     if not query_string:
         return jsonify({"error": "No query provided"}), 400
 
-    most_relevant_items = find_most_relevant_items(query_string)
+    most_relevant_items, total_items = find_most_relevant_items(query_string, page, per_page)
 
     if len(most_relevant_items) == 0:
         return jsonify({"message": "No relevant items found"}), 204
@@ -37,7 +39,13 @@ def search():
         'audio_link': item.audio_link
     } for item in most_relevant_items]
 
-    return jsonify(results), 200
+    total_pages = (total_items + per_page - 1) // per_page
+
+    return jsonify({
+        'results': results,
+        'total_items': total_items,
+        'total_pages': total_pages
+    }), 200
 
 
 @app.route('/metrics')
