@@ -3,7 +3,6 @@ from datetime import datetime
 
 import pytz
 from sqlalchemy import Column, UUID, String, DateTime
-from sqlalchemy.orm import relationship, Mapped, session
 
 from shared.models import Base
 

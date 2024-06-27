@@ -30,7 +30,7 @@ def websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_se
             session.add(subscription)
             session.commit()
             session.close()
-            return jsonify({"status": "Subscription validated"}), 200
+            return jsonify({"status": "Subscription validated"}), 202
         else:
             return jsonify({"error": "Subscription validation failed"}), 400
 
