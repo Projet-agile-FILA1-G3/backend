@@ -5,17 +5,26 @@ import config
 import requests
 
 from flask import request, jsonify, Flask, render_template
+from flask_caching import Cache
 from flask_cors import CORS
 from api.websub_service import websub_treatment, notify_subscribers
 from shared.models.Subscriptions import Subscriptions
 from api.service import get_metrics_from_query, find_most_relevant_items, is_worker_alive, get_last_fetching_date, \
     get_number_of_articles, get_number_of_feed
 
+config = {
+    "CACHE_TYPE": "SimpleCache",
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
+
 app = Flask(__name__)
+app.config.from_mapping(config)
+cache = Cache(app)
 CORS(app)
 
 
 @app.route('/search')
+@cache.cached(timeout=300, query_string=True)
 def search():
     query_string = request.args.get('query', '')
     page = request.args.get('page', 1, type=int)
@@ -109,6 +118,7 @@ def receive_feed_notification():
   
 
 @app.route('/healthcheck')
+@cache.cached(timeout=300)
 def healthcheck():
     return jsonify({
         "status": is_worker_alive() and "OK" or "DOWN",
