@@ -88,7 +88,7 @@ def websub_endpoint():
         hub_secret = request.form.get("hub.secret")
         hub_lease_seconds = request.form.get("hub.lease_seconds", 3600000)
 
-        if not all([hub_callback, hub_mode, hub_topic, hub_secret]):
+        if not all([hub_callback, hub_mode, hub_topic]):
             return jsonify({"error": "Missing parameters"}), 400
 
         return websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_seconds)
