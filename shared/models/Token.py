@@ -1,4 +1,4 @@
-from sqlalchemy import PrimaryKeyConstraint, Column, String, Integer, ForeignKey
+from sqlalchemy import PrimaryKeyConstraint, Column, String, Integer, ForeignKey, Index
 from sqlalchemy.orm import relationship
 
 from shared.models import Base
@@ -14,6 +14,9 @@ class Token(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint('word', 'item_id'),
+        Index('idx_token_word', 'word'),
+        Index('idx_token_item_id', 'item_id'),
+        Index('idx_token_word_item_id', 'word', 'item_id')
     )
 
     def __init__(self, word, rank, item_id, **kw):

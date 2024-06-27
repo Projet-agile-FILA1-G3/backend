@@ -1,6 +1,6 @@
 import hashlib
 
-from sqlalchemy import Column, String, DateTime, UUID, ForeignKey
+from sqlalchemy import Column, String, DateTime, UUID, ForeignKey, Index
 from sqlalchemy.orm import relationship
 
 from shared.models import Base
@@ -20,8 +20,12 @@ class Item(Base):
     feed = relationship("Feed", back_populates="items")
     tokens = relationship("Token", back_populates="item", cascade="all, delete-orphan")
 
-    def __init__(self, title, description, link, pub_date, feed_id, audio_link=None, image_link=None, **kw):
+    __table_args__ = (
+        Index('idx_item_hashcode', 'hashcode'),
+        Index('idx_item_pub_date', 'pub_date')
+    )
 
+    def __init__(self, title, description, link, pub_date, feed_id, audio_link=None, image_link=None, **kw):
         super().__init__(**kw)
         self.hashcode = hashlib.md5((title + description + link).encode('utf-8')).hexdigest()
         self.title = title
