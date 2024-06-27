@@ -20,6 +20,13 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
           env:
             - name: ENV
               value: production
@@ -38,3 +45,5 @@ spec:
                   key: postgres-password
             - name: POSTGRES_DB
               value: postgres
+            - name: API_URL
+              value: "http://api-service.rss-radar.svc.cluster.local"
