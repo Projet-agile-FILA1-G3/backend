@@ -15,7 +15,7 @@ class Subscriptions(Base):
     hub_mode = Column(String, nullable=False)
     hub_topic = Column(String, nullable=False)
     hub_lease_seconds = Column(String, nullable=False)
-    hub_secret = Column(String, nullable=False)
+    hub_secret = Column(String)
     subscription_date = Column(DateTime, default=datetime.now(pytz.timezone('Europe/Paris')))
 
     def __init__(self, hub_callback, hub_mode, hub_topic, hub_lease_seconds, hub_secret, **kw):
