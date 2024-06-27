@@ -49,10 +49,11 @@ class ItemParser(ABC):
     def get_audio(self):
         pass
 
+
     @abstractmethod
     def get_image(self):
         pass
-
+      
     def get_pub_date(self):
         return (datetime.now() - timedelta(days=2)).isoformat()
 
@@ -99,6 +100,7 @@ class RssItemParser(ItemParser):
         except:
             return None
 
+
     def get_pub_date(self):
         if not self.item.pub_date:
             return super().get_pub_date()
@@ -143,6 +145,7 @@ class AtomItemParser(ItemParser):
             return picture_link
         except:
             return None
+
 
     def get_pub_date(self):
         if not self.item.content.updated:

@@ -1,18 +1,14 @@
-import csv
 import logging
 import os
-
 from queue import Queue
 from threading import Thread
 from time import sleep
 
 import schedule
 
-from shared.db import init_db, get_session
-from shared.models.Feed import Feed
-from shared.persistence.FeedRepository import FeedRepository
-from worker.scheduler import scheduler_init
+from shared.db import init_db
 from utils import is_prod_env, add_defaults_feed
+from worker.scheduler import scheduler_init
 
 if not is_prod_env():
     from dotenv import load_dotenv
@@ -42,7 +38,6 @@ if __name__ == '__main__':
     feed_to_crawl = Queue()
     scheduler_init(feed_to_crawl)
 
-    crawler(feed_to_crawl)
     Thread(target=crawler, args=(feed_to_crawl,)).start()
 
     while True:

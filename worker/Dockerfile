@@ -10,6 +10,7 @@ RUN python -m nltk.downloader stopwords
 
 COPY worker/ worker/
 COPY shared/ shared/
+COPY worker/urls.csv ./urls.csv
 
 EXPOSE 5000
 

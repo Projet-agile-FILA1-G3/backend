@@ -21,6 +21,7 @@ class Item(Base):
     tokens = relationship("Token", back_populates="item", cascade="all, delete-orphan")
 
     def __init__(self, title, description, link, pub_date, feed_id, audio_link=None, image_link=None, **kw):
+
         super().__init__(**kw)
         self.hashcode = hashlib.md5((title + description + link).encode('utf-8')).hexdigest()
         self.title = title
