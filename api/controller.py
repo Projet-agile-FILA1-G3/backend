@@ -36,7 +36,8 @@ def search():
         'link': item.link,
         'pub_date': item.pub_date.isoformat(),
         'feed_id': str(item.feed_id),
-        'audio_link': item.audio_link
+        'audio_link': item.audio_link,
+        'image_link': item.image_link
     } for item in most_relevant_items]
 
     total_pages = (total_items + per_page - 1) // per_page
