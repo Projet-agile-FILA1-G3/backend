@@ -1,6 +1,7 @@
 import os
 import time
 from datetime import datetime
+from functools import reduce
 from operator import or_
 
 import pytz
@@ -27,10 +28,7 @@ def find_most_relevant_items(query, page=1, per_page=10):
     words = get_tokens(query, 'fr')
     like_conditions = [Token.word.ilike(f"%{word}%") for word in words]
 
-    if len(like_conditions) == 1:
-        conditions = like_conditions[0]
-    else:
-        conditions = or_(*like_conditions)
+    conditions = reduce(or_, like_conditions)
 
     current_date = datetime.now(pytz.timezone('Europe/Paris'))
     current_date_no_tz = current_date.replace(tzinfo=None)
