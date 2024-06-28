@@ -14,13 +14,16 @@ patches:
         value: rss-radar-dev
       - op: replace
         path: /spec/template/spec/containers/0/env/0/value
-        value: development
+        value: production
       - op: replace
         path: /spec/template/spec/containers/0/env/2/value
         value: postgresql.rss-radar-dev.svc.cluster.local
       - op: replace
         path: /spec/template/spec/containers/0/env/3/value
         value: "5433"
+      - op: replace
+        path: /spec/template/spec/containers/0/env/7/value
+        value: "http://api-service.rss-radar-dev.svc.cluster.local"
   - target:
       kind: Deployment
       name: api-deployment

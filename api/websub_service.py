@@ -18,7 +18,7 @@ def websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_se
     if hub_mode == "subscribe":
         challenge = str(uuid.uuid4())
         response = requests.get(hub_callback,
-                                params={"hub.mode": hub_mode, "hub.topic": hub_topic, "hub.challenge": challenge})
+                                params={"hub.mode": hub_mode, "hub.topic": hub_topic, "hub.challenge": challenge, "hub.lease_seconds": hub_lease_seconds})
         if response.status_code == 200 and response.text == challenge:
             subscription = Subscriptions(
                 hub_callback=hub_callback,
@@ -30,7 +30,7 @@ def websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_se
             session.add(subscription)
             session.commit()
             session.close()
-            return jsonify({"status": "Subscription validated"}), 200
+            return jsonify({"status": "Subscription validated"}), 202
         else:
             return jsonify({"error": "Subscription validation failed"}), 400
 

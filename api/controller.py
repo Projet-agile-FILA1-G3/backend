@@ -5,17 +5,26 @@ import config
 import requests
 
 from flask import request, jsonify, Flask, render_template
+from flask_caching import Cache
 from flask_cors import CORS
 from api.websub_service import websub_treatment, notify_subscribers
 from shared.models.Subscriptions import Subscriptions
 from api.service import get_metrics_from_query, find_most_relevant_items, is_worker_alive, get_last_fetching_date, \
     get_number_of_articles, get_number_of_feed
 
+config = {
+    "CACHE_TYPE": "SimpleCache",
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
+
 app = Flask(__name__)
+app.config.from_mapping(config)
+cache = Cache(app)
 CORS(app)
 
 
 @app.route('/search')
+@cache.cached(timeout=300, query_string=True)
 def search():
     query_string = request.args.get('query', '')
     page = request.args.get('page', 1, type=int)
@@ -36,7 +45,8 @@ def search():
         'link': item.link,
         'pub_date': item.pub_date.isoformat(),
         'feed_id': str(item.feed_id),
-        'audio_link': item.audio_link
+        'audio_link': item.audio_link,
+        'image_link': item.image_link
     } for item in most_relevant_items]
 
     total_pages = (total_items + per_page - 1) // per_page
@@ -87,7 +97,7 @@ def websub_endpoint():
         hub_secret = request.form.get("hub.secret")
         hub_lease_seconds = request.form.get("hub.lease_seconds", 3600000)
 
-        if not all([hub_callback, hub_mode, hub_topic, hub_secret]):
+        if not all([hub_callback, hub_mode, hub_topic]):
             return jsonify({"error": "Missing parameters"}), 400
 
         return websub_treatment(hub_callback, hub_mode, hub_topic, hub_secret, hub_lease_seconds)

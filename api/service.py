@@ -1,9 +1,11 @@
 import os
+import time
 from datetime import datetime
+from functools import reduce
 from operator import or_
 
 import pytz
-from sqlalchemy import func, desc, and_
+from sqlalchemy import func, desc
 
 from shared.db import get_session
 from shared.models.Item import Item
@@ -24,13 +26,9 @@ def find_most_relevant_items(query, page=1, per_page=10):
         return [], 0
 
     words = get_tokens(query, 'fr')
-
     like_conditions = [Token.word.ilike(f"%{word}%") for word in words]
 
-    if len(like_conditions) == 1:
-        conditions = like_conditions[0]
-    else:
-        conditions = or_(*like_conditions)
+    conditions = reduce(or_, like_conditions)
 
     current_date = datetime.now(pytz.timezone('Europe/Paris'))
     current_date_no_tz = current_date.replace(tzinfo=None)
@@ -46,8 +44,11 @@ def find_most_relevant_items(query, page=1, per_page=10):
         Token.item_id
     ).subquery()
 
+    count_subquery = session.query(func.count(subquery.c.item_id)).scalar()
+    total_items = count_subquery if count_subquery is not None else 0
+
     date_weight = 1
-    query = session.query(
+    main_query = session.query(
         Item,
         (subquery.c.total_rank - func.log(date_weight * func.extract('epoch',
                                                                      current_date_no_tz - subquery.c.max_pub_date) / 86400)).label(
@@ -56,12 +57,9 @@ def find_most_relevant_items(query, page=1, per_page=10):
         subquery, Item.hashcode == subquery.c.item_id
     ).order_by(
         desc('weighted_score')
-    )
+    ).limit(per_page).offset((page - 1) * per_page)
 
-    total_items = query.count()
-    query = query.limit(per_page).offset((page - 1) * per_page)
-
-    most_relevant_items = query.all()
+    most_relevant_items = main_query.all()
     session.close()
 
     return [item for item, _ in most_relevant_items], total_items
