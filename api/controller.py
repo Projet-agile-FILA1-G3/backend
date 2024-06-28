@@ -118,7 +118,6 @@ def receive_feed_notification():
   
 
 @app.route('/healthcheck')
-@cache.cached(timeout=300)
 def healthcheck():
     return jsonify({
         "status": is_worker_alive() and "OK" or "DOWN",
