@@ -1,4 +1,0 @@
-resources:
-  - worker.yaml
-  - api.yaml
-  - front.yaml

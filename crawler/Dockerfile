@@ -8,12 +8,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN python -m nltk.downloader stopwords
 
-COPY worker/ worker/
+COPY crawler/ crawler/
 COPY shared/ shared/
-COPY worker/urls.csv ./urls.csv
 
 EXPOSE 5000
 
 ENV PYTHONPATH "${PYTHONPATH}:/app"
 
-CMD ["python", "worker/app.py"]
+CMD ["python", "crawler/app.py"]

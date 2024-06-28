@@ -11,6 +11,8 @@ RUN python -m nltk.downloader stopwords
 COPY api/ api/
 COPY shared/ shared/
 
+EXPOSE 5000
+
 ENV PYTHONPATH "${PYTHONPATH}:/app"
 
 CMD ["python", "api/app.py"]
