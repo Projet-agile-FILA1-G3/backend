@@ -11,3 +11,6 @@ crontab
 beautifulsoup4~=4.12.3
 schedule~=1.2.2
 pytz
+Flask-Caching
+waitress
+config

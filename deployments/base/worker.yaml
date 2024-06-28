@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-deployment
+  namespace: rss-radar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: worker
+          image: ghcr.io/eliasmorio/rss-radar-worker:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            - name: ENV
+              value: production
+            - name: PORT
+              value: "5000"
+            - name: POSTGRES_HOST
+              value: "postgresql.rss-radar.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: postgres
+            - name: API_URL
+              value: "http://api-service.rss-radar.svc.cluster.local"
